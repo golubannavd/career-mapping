@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Карьерная карта · Скиллы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=DM+Sans:wght@300;400;500&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F4EF;--bg2:#FFFFFF;--bg3:#F0EDE6;--bg4:#E8E4DC;
+  --border:#E0DBD2;--border2:#CEC9BE;
+  --muted:#A09A90;--text:#1C1A17;--text2:#5A5750;--text3:#8A8580;
+  --gold:#C9A96E;--gold-d:rgba(201,169,110,.14);--gold-dd:rgba(201,169,110,.07);
+  --terra:#C4622D;--terra-d:rgba(196,98,45,.14);
+  --teal:#4DA89A;--teal-d:rgba(77,168,154,.14);
+  --violet:#8B7EC8;--violet-d:rgba(139,126,200,.12);
+  --rose:#C26D8A;--rose-d:rgba(194,109,138,.12);
+  --hard-color:#C4622D;--hard-bg:rgba(196,98,45,.08);
+  --soft-color:#4DA89A;--soft-bg:rgba(77,168,154,.08);
+}
+html,body{width:100%;min-height:100vh}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+@media print{
+  .topbar,.add-node-btn,.node-controls,.skill-add-btn,.tbtn,.add-skill-row,
+  .footer-note,.legend-wrap{display:none!important}
+  body{background:#fff;color:#111;font-size:11px}
+  .canvas-wrap{padding-top:16px}
+  .node-card{border:1px solid #e0e0e0!important;background:#fff!important;page-break-inside:avoid}
+  .node-title{color:#111!important;font-size:14px!important}
+  .connector-svg{display:none}
+  .skill-bar-bg{background:#eee!important}
+  .skill-label{color:#555!important}
+  .skill-pct{color:#888!important}
+  .section-hd{color:#666!important;border-color:#eee!important}
+  .level-label-text{color:#888!important}
+  .level-label-line{background:#ddd!important}
+}
+
+/* ── TOP BAR ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:300;height:52px;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(247,244,239,.95);backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border)
+}
+.t-left{display:flex;align-items:center;gap:12px}
+.logo{width:28px;height:28px;border-radius:8px;background:var(--gold);
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--bg);font-weight:600}
+.logo-name{font-family:'Fraunces',serif;font-size:15px;font-weight:300}
+.tab-row{display:flex;gap:2px;margin-left:12px}
+.tab{
+  padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;
+  color:var(--text3);background:transparent;border:none;font-family:'DM Sans',sans-serif;
+  transition:all .15s
+}
+.tab.active{background:var(--bg4);color:var(--text)}
+.tab:hover:not(.active){color:var(--text2)}
+.t-right{display:flex;gap:8px;align-items:center}
+.save-pill{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--teal)}
+.tbtn{
+  display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:7px;
+  font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);
+  background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .15s
+}
+.tbtn:hover{background:var(--bg3);color:var(--text)}
+.tbtn-gold{border-color:var(--gold);color:var(--gold)}
+.tbtn-gold:hover{background:var(--gold-d)}
+
+/* ── CANVAS ── */
+.canvas-wrap{padding:68px 0 80px;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+
+.level-label-wrap{
+  display:flex;align-items:center;gap:12px;padding:0 36px;
+  margin-bottom:14px;width:100%;max-width:1200px
+}
+.level-label-line{flex:1;height:1px;background:var(--border)}
+.level-label-text{
+  font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);white-space:nowrap;outline:none;cursor:text
+}
+
+.level-row{
+  display:flex;justify-content:center;gap:18px;
+  position:relative;z-index:1;width:100%;max-width:1200px;padding:0 36px;flex-wrap:wrap
+}
+.level-spacer{height:68px;width:100%;flex-shrink:0}
+.connector-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible}
+
+/* ── NODE ── */
+.role-node{position:relative;width:260px;flex-shrink:0}
+
+.node-card{
+  border-radius:14px;border:1px solid var(--border);background:var(--bg2);
+  padding:15px 15px 12px;cursor:pointer;
+  transition:all .2s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden
+}
+.node-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(0,0,0,.10);transform:translateY(-2px)}
+.node-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px;border-radius:14px 14px 0 0}
+
+.node-current .node-card{border-color:rgba(77,168,154,.35);background:rgba(77,168,154,.06)}
+.node-current .node-card::before{background:var(--teal)}
+.node-target  .node-card{border-color:rgba(201,169,110,.35);background:rgba(201,169,110,.07)}
+.node-target  .node-card::before{background:linear-gradient(90deg,var(--gold),var(--terra))}
+.node-active  .node-card{border-color:rgba(196,98,45,.3);background:rgba(196,98,45,.05)}
+.node-active  .node-card::before{background:var(--terra)}
+.node-branch  .node-card{border-color:rgba(139,126,200,.25);background:rgba(139,126,200,.05)}
+.node-branch  .node-card::before{background:var(--violet)}
+.node-alt     .node-card{border-color:rgba(194,109,138,.25);background:rgba(194,109,138,.05)}
+.node-alt     .node-card::before{background:var(--rose)}
+
+.node-badge{
+  display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;
+  margin-bottom:8px;font-size:9px;font-weight:500;letter-spacing:.07em;text-transform:uppercase
+}
+.bdot{width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0}
+.b-current{background:rgba(77,168,154,.15);color:var(--teal)}
+.b-active {background:rgba(196,98,45,.15);color:var(--terra)}
+.b-target {background:rgba(201,169,110,.18);color:var(--gold)}
+.b-branch {background:rgba(139,126,200,.15);color:var(--violet)}
+.b-alt    {background:rgba(194,109,138,.15);color:var(--rose)}
+.b-future {background:rgba(90,87,80,.18);color:var(--muted)}
+
+.node-title{
+  font-family:'Fraunces',serif;font-size:16px;font-weight:500;line-height:1.25;
+  color:var(--text);margin-bottom:2px;outline:none;
+}
+.node-title:focus{border-bottom:1px solid var(--border2)}
+.node-sub{font-size:11px;color:var(--text3);margin-bottom:8px;outline:none;line-height:1.4}
+.node-sub:focus{border-bottom:1px dashed var(--border2)}
+.node-timeline{
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);
+  margin-bottom:10px;outline:none;cursor:text;display:inline-block
+}
+.node-timeline:focus{color:var(--text2)}
+
+/* ── SKILLS INSIDE NODE ── */
+.skills-section{margin-top:10px}
+
+.section-hd{
+  display:flex;align-items:center;gap:7px;
+  font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--border)
+}
+.hd-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.hd-hard{color:var(--terra)}
+.hd-soft{color:var(--teal)}
+.hd-hard .hd-dot{background:var(--terra)}
+.hd-soft .hd-dot{background:var(--teal)}
+
+.skill-row{
+  display:grid;grid-template-columns:1fr 90px 28px;
+  align-items:center;gap:6px;margin-bottom:5px
+}
+.skill-label{
+  font-size:11px;color:var(--text2);outline:none;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis
+}
+.skill-label:focus{color:var(--text);overflow:visible;white-space:normal}
+.skill-label:empty::before{content:'навык';color:var(--muted)}
+
+.bar-wrap{position:relative;height:4px;border-radius:4px;background:var(--bg4);cursor:pointer;overflow:visible}
+.bar-fill{height:100%;border-radius:4px;transition:width .3s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.bar-thumb{
+  position:absolute;top:50%;transform:translateY(-50%) translateX(-50%);
+  width:12px;height:12px;border-radius:50%;
+  border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.15);
+  pointer-events:none;transition:opacity .15s;opacity:0
+}
+.bar-wrap:hover .bar-thumb{opacity:1}
+.bar-pct{
+  font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);
+  text-align:right;user-select:none;white-space:nowrap
+}
+
+.skill-del{
+  opacity:0;background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:12px;padding:0;line-height:1;
+  transition:all .12s;border-radius:3px
+}
+.skill-row:hover .skill-del{opacity:1}
+.skill-del:hover{color:#e74c3c}
+
+.add-skill-row{
+  display:flex;align-items:center;gap:5px;margin-top:5px;
+  font-size:10px;color:var(--muted);cursor:pointer;
+  background:none;border:none;padding:2px 0;font-family:'DM Sans',sans-serif;
+  transition:color .12s
+}
+.add-skill-row:hover{color:var(--gold)}
+.add-skill-row svg{transition:transform .12s}
+.add-skill-row:hover svg{transform:rotate(90deg)}
+
+/* detail section */
+.node-detail{max-height:0;overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1)}
+.node-card.open .node-detail{max-height:300px;border-top:1px solid var(--border);margin-top:12px;padding-top:10px}
+.detail-label{font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;margin-top:8px}
+.detail-label:first-child{margin-top:0}
+.detail-note{
+  width:100%;background:none;border:none;resize:none;font-size:11px;
+  font-family:'DM Sans',sans-serif;color:var(--text2);line-height:1.7;min-height:44px;outline:none
+}
+.detail-note::placeholder{color:var(--muted)}
+
+.node-controls{position:absolute;right:8px;top:8px;display:flex;gap:3px;opacity:0;transition:opacity .15s}
+.node-card:hover .node-controls{opacity:1}
+.nctl{
+  width:20px;height:20px;border-radius:5px;background:var(--bg3);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  font-size:9px;color:var(--muted);transition:all .12s;font-family:'DM Sans',sans-serif
+}
+.nctl:hover{color:var(--text);background:var(--bg4)}
+.nctl-del:hover{color:#e74c3c;border-color:#e74c3c;background:rgba(231,76,60,.1)}
+
+.add-node-btn{
+  width:230px;height:46px;flex-shrink:0;border:1px dashed var(--border);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--muted);
+  cursor:pointer;transition:all .15s;background:transparent;font-family:'DM Sans',sans-serif
+}
+.add-node-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-d)}
+
+.legend-wrap{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;padding:24px 0 8px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)}
+.leg-line{width:20px;height:2px;border-radius:1px}
+.footer-note{text-align:center;font-size:11px;color:var(--muted);padding:6px 20px 36px;max-width:500px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="t-left">
+    <div class="logo">К</div>
+    <div class="logo-name">Карьерная карта</div>
+    <div class="tab-row">
+      <button class="tab active">Роли и скиллы</button>
+    </div>
+  </div>
+  <div class="t-right">
+    <span class="save-pill"><span class="sdot" id="sdot"></span><span id="stxt">Сохранено</span></span>
+    <button class="tbtn" onclick="addLevel()">+ Уровень</button>
+    <button class="tbtn tbtn-gold" onclick="window.print()">Распечатать</button>
+  </div>
+</div>
+
+<div class="canvas-wrap" id="canvasWrap"></div>
+
+<script>
+const STORE='career_skills_v1';
+
+// ═══════════════════════════════════════════════
+// DATA — each node has hardSkills[] and softSkills[]
+// pct = target level for this role
+// ═══════════════════════════════════════════════
+const INIT={levels:[
+  // ── ЦЕЛЬ ────────────────────────────────────
+  {label:'Финальная точка · работаю откуда угодно',nodes:[
+    {id:'n_goal',type:'target',
+     title:'Global Strategy Advisor',
+     sub:'Independent · Fractional · Remote-first',
+     timeline:'2033+',
+     hardSkills:[
+       {name:'GTM Strategy (global)',pct:100},
+       {name:'IP Creation (book/course)',pct:90},
+       {name:'Consulting & Client Mgmt',pct:95},
+       {name:'Speaking & Thought Leadership',pct:90},
+       {name:'Pricing & Business Models',pct:85},
+       {name:'Licensing / Royalty structures',pct:80},
+     ],
+     softSkills:[
+       {name:'Executive Presence',pct:95},
+       {name:'Cross-cultural Communication',pct:95},
+       {name:'Strategic Thinking',pct:100},
+       {name:'Entrepreneurial Mindset',pct:95},
+       {name:'Client Relationships',pct:90},
+     ],
+     note:'4 источника дохода: ретейнеры, роялти с курса и книги, speaking fees, advisory equity. 3–4 клиента в год из разных регионов.',
+     ip:'Книга о GTM в emerging markets. Онлайн-курс. Лицензируемые фреймворки.'
+    }
+  ]},
+  // ── УРОВЕНЬ 3 · развилка ───────────────────
+  {label:'Уровень 3 · 2030–33 · выбери один путь',nodes:[
+    {id:'n_fractional',type:'branch',
+     title:'Fractional CMO',
+     sub:'Portfolio: 3–5 компаний',
+     timeline:'2030–2033',
+     hardSkills:[
+       {name:'GTM Strategy (global)',pct:85},
+       {name:'IP Creation (book/course)',pct:65},
+       {name:'Consulting & Client Mgmt',pct:80},
+       {name:'Speaking & Thought Leadership',pct:70},
+       {name:'Pricing & Business Models',pct:75},
+       {name:'Licensing / Royalty structures',pct:55},
+     ],
+     softSkills:[
+       {name:'Executive Presence',pct:80},
+       {name:'Cross-cultural Communication',pct:80},
+       {name:'Strategic Thinking',pct:85},
+       {name:'Entrepreneurial Mindset',pct:85},
+       {name:'Client Relationships',pct:80},
+     ],
+     note:'Первые клиенты за пределами ЮВА. Запуск курса. Remote by default.',
+     ip:'Первый платный курс. 2–3 публикации в LinkedIn / Substack. Первый платный воркшоп.'
+    },
+    {id:'n_vp',type:'branch',
+     title:'VP / Head of Marketing',
+     sub:'Global tech · Series B+',
+     timeline:'2029–2033',
+     hardSkills:[
+       {name:'GTM Strategy (global)',pct:90},
+       {name:'IP Creation (book/course)',pct:50},
+       {name:'Consulting & Client Mgmt',pct:60},
+       {name:'Speaking & Thought Leadership',pct:75},
+       {name:'Pricing & Business Models',pct:80},
+       {name:'Licensing / Royalty structures',pct:35},
+     ],
+     softSkills:[
+       {name:'Executive Presence',pct:85},
+       {name:'Cross-cultural Communication',pct:85},
+       {name:'Strategic Thinking',pct:88},
+       {name:'Entrepreneurial Mindset',pct:70},
+       {name:'Client Relationships',pct:70},
+     ],
+     note:'Строю международный трек и нетворк внутри компании. Потом выхожу в консалтинг с весом VP.',
+     ip:'Публикации HBR/Forbes. Выступления на конференциях. Подготовка к выходу в независимость.'
+    },
+    {id:'n_founder',type:'alt',
+     title:'Co-founder · MarTech',
+     sub:'Собственный продукт',
+     timeline:'2028–2032',
+     hardSkills:[
+       {name:'GTM Strategy (global)',pct:85},
+       {name:'IP Creation (book/course)',pct:40},
+       {name:'Consulting & Client Mgmt',pct:55},
+       {name:'Speaking & Thought Leadership',pct:60},
+       {name:'Pricing & Business Models',pct:90},
+       {name:'Licensing / Royalty structures',pct:60},
+     ],
+     softSkills:[
+       {name:'Executive Presence',pct:80},
+       {name:'Cross-cultural Communication',pct:75},
+       {name:'Strategic Thinking',pct:85},
+       {name:'Entrepreneurial Mindset',pct:95},
+       {name:'Client Relationships',pct:75},
+     ],
+     note:'Самый рискованный, самый быстрый путь к geo-freedom. Продукт как IP.',
+     ip:'SaaS-продукт. Контент как дистрибуция. Капитализация через equity.'
+    }
+  ]},
+  // ── УРОВЕНЬ 2 ──────────────────────────────
+  {label:'Уровень 2 · 2027–30 · международный выход + первый IP',nodes:[
+    {id:'n_dir',type:'active',
+     title:'Director of Product Marketing',
+     sub:'International fintech / SaaS',
+     timeline:'2027–2030',
+     hardSkills:[
+       {name:'GTM Strategy (global)',pct:75},
+       {name:'IP Creation (book/course)',pct:30},
+       {name:'Consulting & Client Mgmt',pct:40},
+       {name:'Speaking & Thought Leadership',pct:45},
+       {name:'Pricing & Business Models',pct:65},
+       {name:'Licensing / Royalty structures',pct:20},
+     ],
+     softSkills:[
+       {name:'Executive Presence',pct:70},
+       {name:'Cross-cultural Communication',pct:75},
+       {name:'Strategic Thinking',pct:75},
+       {name:'Entrepreneurial Mindset',pct:60},
+       {name:'Client Relationships',pct:55},
+     ],
+     note:'GTM для 2+ рынков. Первые публикации. Параллельный консалтинг 1–2 клиента.',
+     ip:'Первые статьи как эксперт. Первый публичный фреймворк (Notion / Substack).'
+    },
+    {id:'n_side',type:'future',
+     title:'Side Consulting',
+     sub:'1–2 клиента параллельно',
+     timeline:'2026–2029',
+     hardSkills:[
+       {name:'GTM Strategy (global)',pct:65},
+       {name:'IP Creation (book/course)',pct:20},
+       {name:'Consulting & Client Mgmt',pct:50},
+       {name:'Speaking & Thought Leadership',pct:30},
+       {name:'Pricing & Business Models',pct:50},
+       {name:'Licensing / Royalty structures',pct:10},
+     ],
+     softSkills:[
+       {name:'Executive Presence',pct:60},
+       {name:'Cross-cultural Communication',pct:65},
+       {name:'Strategic Thinking',pct:65},
+       {name:'Entrepreneurial Mindset',pct:65},
+       {name:'Client Relationships',pct:60},
+     ],
+     note:'Параллельный трек. Учусь продавать себя. Первый $1000/month. Строю портфолио.',
+     ip:'Первый платный воркшоп. LinkedIn как канал привлечения клиентов.'
+    }
+  ]},
+  // ── УРОВЕНЬ 1 ──────────────────────────────
+  {label:'Уровень 1 · 2025–27 · первый управленческий опыт',nodes:[
+    {id:'n_head',type:'future',
+     title:'Head of Product Marketing',
+     sub:'Fintech · ЮВА · 2 рынка',
+     timeline:'2025–2027',
+     hardSkills:[
+       {name:'GTM Strategy (global)',pct:60},
+       {name:'IP Creation (book/course)',pct:10},
+       {name:'Consulting & Client Mgmt',pct:25},
+       {name:'Speaking & Thought Leadership',pct:20},
+       {name:'Pricing & Business Models',pct:50},
+       {name:'Licensing / Royalty structures',pct:5},
+     ],
+     softSkills:[
+       {name:'Executive Presence',pct:55},
+       {name:'Cross-cultural Communication',pct:60},
+       {name:'Strategic Thinking',pct:60},
+       {name:'Entrepreneurial Mindset',pct:50},
+       {name:'Client Relationships',pct:40},
+     ],
+     note:'Первая управленческая роль. Расширяю охват на Индонезию / Вьетнам. Первый международный кейс в портфолио.',
+     ip:'Документирую фреймворки работы. Начинаю личный блог / LinkedIn.'
+    }
+  ]},
+  // ── СТАРТ ───────────────────────────────────
+  {label:'Старт · где я сейчас',nodes:[
+    {id:'n_now',type:'current',
+     title:'Senior PMM',
+     sub:'Product Marketing & GTM Strategy',
+     timeline:'2024 — сейчас',
+     hardSkills:[
+       {name:'GTM Strategy (global)',pct:45},
+       {name:'IP Creation (book/course)',pct:5},
+       {name:'Consulting & Client Mgmt',pct:15},
+       {name:'Speaking & Thought Leadership',pct:10},
+       {name:'Pricing & Business Models',pct:40},
+       {name:'Licensing / Royalty structures',pct:0},
+     ],
+     softSkills:[
+       {name:'Executive Presence',pct:40},
+       {name:'Cross-cultural Communication',pct:50},
+       {name:'Strategic Thinking',pct:55},
+       {name:'Entrepreneurial Mindset',pct:40},
+       {name:'Client Relationships',pct:30},
+     ],
+     note:'Запуск Skyro Wallet. Строю фундамент: глубокая экспертиза в emerging market GTM, измеримые результаты.',
+     ip:'Документирую процесс → будущее портфолио и контент для курса.'
+    }
+  ]}
+]};
+
+function loadData(){
+  try{const r=localStorage.getItem(STORE);return r?JSON.parse(r):JSON.parse(JSON.stringify(INIT))}
+  catch{return JSON.parse(JSON.stringify(INIT))}
+}
+const state=loadData();
+let sTimer;
+function schedSave(){clearTimeout(sTimer);sTimer=setTimeout(doSave,700)}
+function doSave(){
+  localStorage.setItem(STORE,JSON.stringify(state));
+  document.getElementById('sdot').style.background='var(--teal)';
+  document.getElementById('stxt').textContent='Сохранено';
+}
+
+// ═══════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════
+function render(){
+  const wrap=document.getElementById('canvasWrap');
+  wrap.innerHTML='';
+
+  state.levels.forEach((lv,li)=>{
+    const lw=document.createElement('div');
+    lw.className='level-label-wrap';
+    lw.innerHTML=`<div class="level-label-line"></div>
+      <div class="level-label-text" contenteditable="true" spellcheck="false"
+        onblur="state.levels[${li}].label=this.textContent.trim();schedSave()"
+      >${e(lv.label)}</div>
+      <div class="level-label-line"></div>`;
+    wrap.appendChild(lw);
+
+    const row=document.createElement('div');
+    row.className='level-row'; row.dataset.li=li;
+    lv.nodes.forEach((nd,ni)=>row.appendChild(makeNode(nd,li,ni)));
+
+    const ab=document.createElement('button');
+    ab.className='add-node-btn';
+    ab.innerHTML=`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Роль`;
+    ab.onclick=()=>addNode(li);
+    row.appendChild(ab);
+    wrap.appendChild(row);
+
+    if(li<state.levels.length-1){const sp=document.createElement('div');sp.className='level-spacer';wrap.appendChild(sp)}
+  });
+
+  const al=document.createElement('div');
+  al.style.cssText='display:flex;justify-content:center;margin-top:24px;padding-bottom:12px;width:100%';
+  al.innerHTML=`<button class="add-node-btn" style="width:260px;height:42px" onclick="addLevel()">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Уровень
+  </button>`;
+  wrap.appendChild(al);
+
+  const leg=document.createElement('div');
+  leg.className='legend-wrap';
+  leg.innerHTML=`
+    <div class="legend-item"><div class="leg-line" style="background:var(--teal)"></div>Сейчас</div>
+    <div class="legend-item"><div class="leg-line" style="background:var(--terra)"></div>Следующий шаг</div>
+    <div class="legend-item"><div class="leg-line" style="background:var(--violet)"></div>Развилка</div>
+    <div class="legend-item"><div class="leg-line" style="background:var(--rose)"></div>Альтернатива</div>
+    <div class="legend-item"><div class="leg-line" style="background:var(--gold)"></div>Цель</div>
+    <div class="legend-item"><div style="width:7px;height:7px;border-radius:50%;background:var(--terra);margin-right:-4px"></div><div class="leg-line" style="background:var(--terra)"></div>Hard skill</div>
+    <div class="legend-item"><div style="width:7px;height:7px;border-radius:50%;background:var(--teal);margin-right:-4px"></div><div class="leg-line" style="background:var(--teal)"></div>Soft skill</div>
+  `;
+  wrap.appendChild(leg);
+
+  const fn=document.createElement('div');
+  fn.className='footer-note';
+  fn.textContent='Прогресс-бары показывают целевой уровень каждого навыка на данной ступени. Тяни бар чтобы изменить. Нажми на карточку — откроются детали.';
+  wrap.appendChild(fn);
+
+  requestAnimationFrame(()=>requestAnimationFrame(drawLines));
+}
+
+// ═══════════════════════════════════════════════
+// NODE
+// ═══════════════════════════════════════════════
+const BADGE={
+  current:['b-current','● Сейчас'],active:['b-active','→ Следующий шаг'],
+  target:['b-target','★ Цель'],branch:['b-branch','⌥ Развилка'],
+  alt:['b-alt','◇ Альтернатива'],future:['b-future','◦ Перспектива']
+};
+
+function makeNode(nd,li,ni){
+  const wrap=document.createElement('div');
+  wrap.className=`role-node node-${nd.type||'future'}`;
+
+  const[bc,bt]=BADGE[nd.type]||BADGE.future;
+  const topts=['current','active','future','branch','alt','target']
+    .map(t=>`<option value="${t}"${nd.type===t?' selected':''}>${t}</option>`).join('');
+
+  const card=document.createElement('div');
+  card.className='node-card';
+  card.id='card_'+nd.id;
+
+  // header
+  card.innerHTML=`
+    <div class="node-controls">
+      <select class="nctl" style="width:auto;padding:0 2px;font-size:9px;background:var(--bg3);color:var(--text2)"
+        onchange="chType('${nd.id}',this.value,${li},${ni})">${topts}</select>
+      <div class="nctl nctl-del" onclick="delNode(${li},${ni})">✕</div>
+    </div>
+    <div class="node-badge ${bc}"><span class="bdot"></span>${bt}</div>
+    <div class="node-title" contenteditable="true" spellcheck="false"
+      onblur="nd.title=this.textContent.trim();schedSave()">${e(nd.title)}</div>
+    <div class="node-sub" contenteditable="true" spellcheck="false"
+      onblur="nd.sub=this.textContent.trim();schedSave()">${e(nd.sub)}</div>
+    <div class="node-timeline" contenteditable="true" spellcheck="false"
+      onblur="nd.timeline=this.textContent.trim();schedSave()">${e(nd.timeline||'20XX')}</div>
+  `;
+
+  // hard skills
+  const hSec=skillSection('Hard Skills','hard',nd.hardSkills||[],nd,li,ni,'hardSkills');
+  const sSec=skillSection('Soft Skills','soft',nd.softSkills||[],nd,li,ni,'softSkills');
+  card.appendChild(hSec);
+  card.appendChild(sSec);
+
+  // detail
+  const det=document.createElement('div');
+  det.className='node-detail';
+  det.innerHTML=`
+    <div class="detail-label">Задачи и шаги</div>
+    <textarea class="detail-note" placeholder="Что нужно сделать, чтобы оказаться здесь..."
+      onblur="nd.note=this.value;schedSave()">${e(nd.note||'')}</textarea>
+    <div class="detail-label">💡 Публикации и IP</div>
+    <textarea class="detail-note" style="min-height:36px" placeholder="Книга, курс, статьи, фреймворки, выступления..."
+      onblur="nd.ip=this.value;schedSave()">${e(nd.ip||'')}</textarea>
+  `;
+  card.appendChild(det);
+
+  card.addEventListener('click',function(ev){
+    if(['INPUT','TEXTAREA','SELECT','BUTTON'].includes(ev.target.tagName))return;
+    if(ev.target.closest('.node-controls')||ev.target.closest('.skills-section'))return;
+    this.classList.toggle('open');
+    requestAnimationFrame(()=>requestAnimationFrame(drawLines));
+  });
+
+  wrap.appendChild(card);
+  return wrap;
+}
+
+function skillSection(label,type,skills,nd,li,ni,key){
+  const sec=document.createElement('div');
+  sec.className='skills-section';
+  const color=type==='hard'?'var(--terra)':'var(--teal)';
+  const colorHex=type==='hard'?'#C4622D':'#4DA89A';
+  const bgColor=type==='hard'?'rgba(196,98,45,.15)':'rgba(77,168,154,.15)';
+
+  const hd=document.createElement('div');
+  hd.className=`section-hd hd-${type}`;
+  hd.innerHTML=`<span class="hd-dot"></span>${label}`;
+  sec.appendChild(hd);
+
+  skills.forEach((sk,si)=>{
+    sec.appendChild(makeSkillBar(sk,si,nd,li,ni,key,colorHex,bgColor));
+  });
+
+  const addBtn=document.createElement('button');
+  addBtn.className='add-skill-row';
+  addBtn.innerHTML=`<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> навык`;
+  addBtn.onclick=(ev)=>{
+    ev.stopPropagation();
+    if(!nd[key])nd[key]=[];
+    nd[key].push({name:'навык',pct:30});
+    schedSave();render();
+  };
+  sec.appendChild(addBtn);
+  return sec;
+}
+
+function makeSkillBar(sk,si,nd,li,ni,key,color,bgC){
+  const row=document.createElement('div');
+  row.className='skill-row';
+
+  const lbl=document.createElement('div');
+  lbl.className='skill-label';
+  lbl.contentEditable='true';
+  lbl.spellcheck=false;
+  lbl.textContent=sk.name;
+  lbl.addEventListener('click',ev=>ev.stopPropagation());
+  lbl.addEventListener('blur',()=>{sk.name=lbl.textContent.trim();schedSave()});
+
+  const bWrap=document.createElement('div');
+  bWrap.className='bar-wrap';
+  bWrap.style.background='var(--bg4)';
+
+  const bFill=document.createElement('div');
+  bFill.className='bar-fill';
+  bFill.style.cssText=`width:${sk.pct||0}%;background:${color}`;
+
+  const bThumb=document.createElement('div');
+  bThumb.className='bar-thumb';
+  bThumb.style.cssText=`left:${sk.pct||0}%;background:${color}`;
+
+  bWrap.appendChild(bFill);
+  bWrap.appendChild(bThumb);
+
+  const pct=document.createElement('div');
+  pct.className='bar-pct';
+  pct.textContent=(sk.pct||0)+'%';
+
+  // drag
+  let drag=false;
+  function setV(ev){
+    const r=bWrap.getBoundingClientRect();
+    const cx=ev.touches?ev.touches[0].clientX:ev.clientX;
+    const v=Math.round(Math.max(0,Math.min(100,(cx-r.left)/r.width*100))/5)*5;
+    sk.pct=v;
+    bFill.style.width=v+'%';
+    bThumb.style.left=v+'%';
+    pct.textContent=v+'%';
+    schedSave();
+  }
+  bWrap.addEventListener('mousedown',ev=>{ev.stopPropagation();drag=true;setV(ev)});
+  bWrap.addEventListener('touchstart',ev=>{drag=true;setV(ev)},{passive:true});
+  document.addEventListener('mousemove',ev=>{if(drag)setV(ev)});
+  document.addEventListener('touchmove',ev=>{if(drag)setV(ev)},{passive:true});
+  document.addEventListener('mouseup',()=>{if(drag){drag=false;doSave()}});
+  document.addEventListener('touchend',()=>{if(drag){drag=false;doSave()}});
+
+  const del=document.createElement('button');
+  del.className='skill-del';
+  del.textContent='✕';
+  del.addEventListener('click',ev=>{
+    ev.stopPropagation();
+    nd[key].splice(si,1);schedSave();render();
+  });
+
+  row.appendChild(lbl);row.appendChild(bWrap);row.appendChild(pct);row.appendChild(del);
+  return row;
+}
+
+// ═══════════════════════════════════════════════
+// CONNECTORS
+// ═══════════════════════════════════════════════
+function drawLines(){
+  document.querySelectorAll('.connector-svg').forEach(el=>el.remove());
+  const wrap=document.getElementById('canvasWrap');
+  const wR=wrap.getBoundingClientRect();
+  const rows=Array.from(document.querySelectorAll('.level-row'));
+
+  for(let i=0;i<rows.length-1;i++){
+    const fCards=rows[i].querySelectorAll('.role-node .node-card');
+    const tCards=rows[i+1].querySelectorAll('.role-node .node-card');
+    if(!fCards.length||!tCards.length)continue;
+
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.classList.add('connector-svg');
+    svg.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:0';
+
+    const cMap={current:'#4DA89A',active:'#C4622D',target:'#C9A96E',branch:'#8B7EC8',alt:'#C26D8A',future:'#CCCAB8'};
+    fCards.forEach(fc=>{
+      const fN=fc.closest('.role-node');if(!fN)return;
+      const tp=fN.className.match(/node-(\w+)/)?.[1]||'future';
+      const col=cMap[tp]||cMap.future;
+      const dashed=tp==='branch'||tp==='alt';
+      const sw=tp==='current'||tp==='active'?'1.8':'1.2';
+      const op=tp==='future'?'.25':'.6';
+
+      tCards.forEach(tc=>{
+        const fR=fc.getBoundingClientRect();
+        const tR=tc.getBoundingClientRect();
+        const x1=fR.left+fR.width/2-wR.left;
+        const y1=fR.bottom-wR.top+wrap.scrollTop;
+        const x2=tR.left+tR.width/2-wR.left;
+        const y2=tR.top-wR.top+wrap.scrollTop;
+        const my=(y1+y2)/2;
+        const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+        p.setAttribute('d',`M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`);
+        p.setAttribute('fill','none');p.setAttribute('stroke',col);
+        p.setAttribute('stroke-width',sw);p.setAttribute('opacity',op);
+        if(dashed)p.setAttribute('stroke-dasharray','5,4');
+        svg.appendChild(p);
+      });
+    });
+    wrap.appendChild(svg);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// MUTATIONS
+// ═══════════════════════════════════════════════
+function chType(id,t,li,ni){state.levels[li].nodes[ni].type=t;schedSave();render()}
+function delNode(li,ni){
+  if(state.levels[li].nodes.length===1){
+    if(!confirm('Удалить весь уровень?'))return;
+    state.levels.splice(li,1);
+  }else state.levels[li].nodes.splice(ni,1);
+  schedSave();render();
+}
+function addNode(li){
+  state.levels[li].nodes.push({
+    id:'n'+Date.now(),type:'future',title:'Роль',sub:'',timeline:'20XX',
+    hardSkills:[{name:'навык',pct:30}],softSkills:[{name:'навык',pct:30}],
+    note:'',ip:''
+  });schedSave();render();
+}
+function addLevel(){
+  state.levels.push({label:'Новый уровень',nodes:[{
+    id:'n'+Date.now(),type:'future',title:'Роль',sub:'',timeline:'20XX',
+    hardSkills:[{name:'навык',pct:30}],softSkills:[{name:'навык',pct:30}],
+    note:'',ip:''
+  }]});schedSave();render();
+}
+function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+render();
+window.addEventListener('resize',()=>requestAnimationFrame(drawLines));
+window.addEventListener('scroll',()=>requestAnimationFrame(drawLines));
+</script>
+</body>
+</html>
