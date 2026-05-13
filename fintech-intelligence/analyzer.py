@@ -1,5 +1,11 @@
 import json
 import re
+import os
+
+# Must be set before httpx/anthropic initialize encoding
+os.environ.setdefault("PYTHONUTF8", "1")
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
 import anthropic
 
 client = anthropic.Anthropic()
@@ -15,6 +21,8 @@ def _extract_json(text: str) -> dict | list:
 
 
 def _ask_claude(prompt: str, use_web_search: bool = False, max_tokens: int = 4000) -> dict | list:
+    # Ensure prompt is pure ASCII-safe UTF-8 string
+    prompt = prompt.encode("utf-8", errors="replace").decode("utf-8")
     tools = [{"type": "web_search_20250305", "name": "web_search"}] if use_web_search else []
     kwargs = dict(
         model=MODEL,
@@ -23,7 +31,16 @@ def _ask_claude(prompt: str, use_web_search: bool = False, max_tokens: int = 400
     )
     if tools:
         kwargs["tools"] = tools
-    response = client.messages.create(**kwargs)
+    try:
+        response = client.messages.create(**kwargs)
+    except Exception as e:
+        if "codec" in str(e).lower() or "ascii" in str(e).lower():
+            # Retry with ASCII-only prompt as last resort
+            safe_prompt = prompt.encode("ascii", errors="replace").decode("ascii")
+            kwargs["messages"] = [{"role": "user", "content": safe_prompt}]
+            response = client.messages.create(**kwargs)
+        else:
+            raise
     text_parts = [b.text for b in response.content if hasattr(b, "text")]
     return _extract_json("\n".join(text_parts))
 
