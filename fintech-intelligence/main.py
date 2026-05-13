@@ -1,14 +1,6 @@
 import json
 import asyncio
-import sys
-import io
 from datetime import datetime
-
-# Force UTF-8 on all platforms (Render may default to ASCII)
-if hasattr(sys.stdout, "buffer"):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-if hasattr(sys.stderr, "buffer"):
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -45,6 +37,23 @@ async def root():
     return FileResponse("static/index.html")
 
 
+@app.get("/api/test")
+async def test_claude():
+    """Diagnostic endpoint to verify Claude API works."""
+    try:
+        import anthropic
+        c = anthropic.AsyncAnthropic()
+        resp = await c.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=50,
+            messages=[{"role": "user", "content": "Say: OK"}],
+        )
+        return {"ok": True, "response": resp.content[0].text}
+    except Exception as e:
+        import traceback
+        return {"ok": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
 @app.post("/api/generate")
 async def generate(req: GenerateRequest):
     async def event_stream():
@@ -52,27 +61,23 @@ async def generate(req: GenerateRequest):
             "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "competitors": req.competitors,
             "sections": {},
-            "raw": {},
         }
 
-        # Progress callback for scrapers
-        progress_events = asyncio.Queue()
+        # Scraping phase
+        progress_events: asyncio.Queue = asyncio.Queue()
 
         async def progress_cb(section: str, status: str):
             await progress_events.put((section, status))
 
-        # Run scrapers in background
         scraper_task = asyncio.create_task(
             scrapers.run_all_scrapers(req.competitors, progress_cb)
         )
 
-        # Stream scraper progress
         scraper_sections = ["meta_ads", "websites", "app_store", "news"]
-        done_scraping = set()
-
+        done_scraping: set = set()
         while len(done_scraping) < len(scraper_sections):
             try:
-                section, status = await asyncio.wait_for(progress_events.get(), timeout=200)
+                section, status = await asyncio.wait_for(progress_events.get(), timeout=300)
                 label = SECTION_LABELS.get(section, section)
                 yield f"data: {json.dumps({'phase': 'scraping', 'section': section, 'label': label, 'status': status})}\n\n"
                 if status == "done":
@@ -81,64 +86,36 @@ async def generate(req: GenerateRequest):
                 break
 
         raw_data = await scraper_task
-        report["raw"] = raw_data
 
-        # Analyze each section
-        yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'meta_ads', 'label': 'Meta Ads', 'status': 'loading'})}\n\n"
-        try:
-            loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                None, analyzer.analyze_meta_ads, raw_data.get("meta_ads", [])
-            )
-            report["sections"]["meta_ads"] = result
-            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'meta_ads', 'label': 'Meta Ads', 'status': 'done', 'data': result})}\n\n"
-        except Exception as e:
-            report["sections"]["meta_ads"] = {"error": str(e)}
-            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'meta_ads', 'status': 'error', 'error': str(e)})}\n\n"
+        # Analysis phase — direct async calls, no thread pool
+        analysis_tasks = [
+            ("meta_ads", analyzer.analyze_meta_ads(raw_data.get("meta_ads", []))),
+            ("websites", analyzer.analyze_websites(raw_data.get("websites", []))),
+            ("app_store", analyzer.analyze_app_store(raw_data.get("app_store", []))),
+            ("news", analyzer.analyze_news(raw_data.get("news", []))),
+        ]
 
-        yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'websites', 'label': 'Websites', 'status': 'loading'})}\n\n"
-        try:
-            result = await loop.run_in_executor(
-                None, analyzer.analyze_websites, raw_data.get("websites", [])
-            )
-            report["sections"]["websites"] = result
-            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'websites', 'label': 'Websites', 'status': 'done', 'data': result})}\n\n"
-        except Exception as e:
-            report["sections"]["websites"] = {"error": str(e)}
-            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'websites', 'status': 'error', 'error': str(e)})}\n\n"
+        for section_id, coro in analysis_tasks:
+            label = SECTION_LABELS[section_id]
+            yield f"data: {json.dumps({'phase': 'analyzing', 'section': section_id, 'label': label, 'status': 'loading'})}\n\n"
+            try:
+                result = await coro
+                report["sections"][section_id] = result
+                yield f"data: {json.dumps({'phase': 'analyzing', 'section': section_id, 'label': label, 'status': 'done', 'data': result})}\n\n"
+            except Exception as e:
+                report["sections"][section_id] = {"error": str(e)}
+                yield f"data: {json.dumps({'phase': 'analyzing', 'section': section_id, 'label': label, 'status': 'error', 'error': str(e)})}\n\n"
 
-        yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'app_store', 'label': 'App Store', 'status': 'loading'})}\n\n"
+        # Recommendations
+        label = SECTION_LABELS["recommendations"]
+        yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'recommendations', 'label': label, 'status': 'loading'})}\n\n"
         try:
-            result = await loop.run_in_executor(
-                None, analyzer.analyze_app_store, raw_data.get("app_store", [])
-            )
-            report["sections"]["app_store"] = result
-            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'app_store', 'label': 'App Store', 'status': 'done', 'data': result})}\n\n"
-        except Exception as e:
-            report["sections"]["app_store"] = {"error": str(e)}
-            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'app_store', 'status': 'error', 'error': str(e)})}\n\n"
-
-        yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'news', 'label': 'News', 'status': 'loading'})}\n\n"
-        try:
-            result = await loop.run_in_executor(
-                None, analyzer.analyze_news, raw_data.get("news", [])
-            )
-            report["sections"]["news"] = result
-            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'news', 'label': 'News', 'status': 'done', 'data': result})}\n\n"
-        except Exception as e:
-            report["sections"]["news"] = {"error": str(e)}
-            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'news', 'status': 'error', 'error': str(e)})}\n\n"
-
-        yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'recommendations', 'label': 'Recommendations', 'status': 'loading'})}\n\n"
-        try:
-            result = await loop.run_in_executor(
-                None, analyzer.generate_recommendations, report["sections"], req.competitors
-            )
+            result = await analyzer.generate_recommendations(report["sections"], req.competitors)
             report["sections"]["recommendations"] = result
-            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'recommendations', 'label': 'Recommendations', 'status': 'done', 'data': result})}\n\n"
+            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'recommendations', 'label': label, 'status': 'done', 'data': result})}\n\n"
         except Exception as e:
             report["sections"]["recommendations"] = {"error": str(e)}
-            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'recommendations', 'status': 'error', 'error': str(e)})}\n\n"
+            yield f"data: {json.dumps({'phase': 'analyzing', 'section': 'recommendations', 'label': label, 'status': 'error', 'error': str(e)})}\n\n"
 
         report_id = storage.save_report(report)
         yield f"data: {json.dumps({'status': 'complete', 'report_id': report_id})}\n\n"
