@@ -52,49 +52,11 @@ async def _run_actor(actor_id: str, run_input: dict, timeout: int = 240) -> list
 
 
 async def scrape_meta_ads(competitors: list[str]) -> list[dict]:
-    """Scrape Meta Ads Library for competitor ads in the Philippines."""
-    results = []
-    for competitor in competitors:
-        try:
-            items = await _run_actor(
-                "apify/facebook-ads-scraper",
-                {
-                    "searchTerms": [competitor],
-                    "country": "PH",
-                    "adType": "ALL",
-                    "maxResults": 10,
-                },
-            )
-            if not items:
-                results.append({
-                    "competitor": competitor,
-                    "source": "meta_ads",
-                    "error": "Actor ran successfully but returned 0 ads — the page may have no active ads in PH",
-                })
-                continue
-            for item in items:
-                snapshot = item.get("snapshot", {})
-                images = snapshot.get("images", [])
-                results.append({
-                    "competitor": competitor,
-                    "source": "meta_ads",
-                    "ad_id": item.get("adArchiveID", ""),
-                    "headline": snapshot.get("title", ""),
-                    "body": (snapshot.get("body") or {}).get("text", "") if isinstance(snapshot.get("body"), dict) else str(snapshot.get("body", "")),
-                    "cta": snapshot.get("cta_text", ""),
-                    "image_url": images[0].get("original_image_url") if images else None,
-                    "page_name": item.get("pageName", competitor),
-                    "start_date": item.get("startDate", ""),
-                    "platforms": item.get("publisherPlatform", []),
-                    "url": f"https://www.facebook.com/ads/library/?id={item.get('adArchiveID', '')}",
-                })
-        except Exception as e:
-            results.append({
-                "competitor": competitor,
-                "source": "meta_ads",
-                "error": str(e),
-            })
-    return results
+    """Meta Ads Library — no reliable public Apify actor exists, signal web search fallback."""
+    return [
+        {"competitor": c, "source": "meta_ads", "error": "no_apify_actor"}
+        for c in competitors
+    ]
 
 
 async def scrape_websites(competitors: list[str], urls: dict[str, str]) -> list[dict]:

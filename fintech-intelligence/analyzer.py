@@ -28,8 +28,13 @@ def _ask_claude(prompt: str, use_web_search: bool = False, max_tokens: int = 400
     return _extract_json("\n".join(text_parts))
 
 
+def _safe_ascii(s: str) -> str:
+    """Strip non-ASCII to avoid codec errors in HTTP requests."""
+    return s.encode("ascii", errors="ignore").decode("ascii")
+
+
 def _errors_from_raw(items: list[dict]) -> list[str]:
-    return list({i["error"] for i in items if "error" in i})
+    return list({_safe_ascii(str(i["error"])) for i in items if "error" in i})
 
 
 def analyze_meta_ads(raw_ads: list[dict]) -> dict:
