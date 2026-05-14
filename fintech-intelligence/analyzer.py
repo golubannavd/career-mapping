@@ -1,6 +1,7 @@
 import json
 import re
 import os
+import asyncio
 import anthropic
 
 # Strip any hidden non-ASCII characters that copy-paste can introduce into the key
@@ -24,20 +25,26 @@ def _extract_json(text: str) -> dict | list:
     return json.loads(match.group())
 
 
-async def _ask_claude_with_search(prompt: str, max_uses: int = 5, max_tokens: int = 4000) -> dict | list:
-    response = await client.messages.create(
-        model=MODEL,
-        max_tokens=max_tokens,
-        tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": max_uses}],
-        messages=[{"role": "user", "content": prompt}],
-    )
-    text = next(
-        (block.text for block in reversed(response.content) if hasattr(block, "text")),
-        None,
-    )
-    if not text:
-        raise ValueError("No text block in response")
-    return _extract_json(text)
+async def _ask_claude_with_search(prompt: str, max_uses: int = 3, max_tokens: int = 3000) -> dict | list:
+    for attempt in range(3):
+        try:
+            response = await client.messages.create(
+                model=MODEL,
+                max_tokens=max_tokens,
+                tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": max_uses}],
+                messages=[{"role": "user", "content": prompt}],
+            )
+            text = next(
+                (block.text for block in reversed(response.content) if hasattr(block, "text")),
+                None,
+            )
+            if not text:
+                raise ValueError("No text block in response")
+            return _extract_json(text)
+        except anthropic.RateLimitError:
+            if attempt == 2:
+                raise
+            await asyncio.sleep(20 * (attempt + 1))
 
 
 def _competitors_str(raw: list[dict]) -> str:

@@ -112,6 +112,7 @@ async def generate(req: GenerateRequest):
             except Exception as e:
                 report["sections"][section_id] = {"error": str(e)}
                 yield f"data: {json.dumps({'phase': 'analyzing', 'section': section_id, 'label': label, 'status': 'error', 'error': str(e)})}\n\n"
+            await asyncio.sleep(5)  # rate limit buffer between Claude API calls
 
         # Recommendations
         label = SECTION_LABELS["recommendations"]

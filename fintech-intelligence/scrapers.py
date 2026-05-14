@@ -232,12 +232,10 @@ async def scrape_social_posts(competitors: list[str]) -> list[dict]:
 
     try:
         items = await _run_actor(
-            "apify/instagram-scraper",
+            "apify/instagram-post-scraper",
             {
                 "directUrls": direct_urls,
-                "resultsType": "posts",
                 "resultsLimit": 9,
-                "addParentData": False,
             },
         )
         for item in items:
