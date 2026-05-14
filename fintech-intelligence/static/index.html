@@ -423,6 +423,15 @@ function renderSocial(data) {
   const findings = data.findings || [];
   let html = dataSourceBanner(data) + takeawayBox(data.takeaway);
 
+  const rawPosts = data._raw_posts || [];
+  const noToken = rawPosts.some(p => p.error === 'no_apify_token');
+  if (noToken) {
+    html += `<div class="phase-banner"><span class="phase-badge">Setup needed</span>
+      Instagram post images require <strong>APIFY_TOKEN</strong> in Render → Environment.
+      Copy your token from <a href="https://console.apify.com/account/integrations" target="_blank" style="color:var(--accent)">console.apify.com → Integrations</a> and add it as an env variable, then redeploy.
+    </div>`;
+  }
+
   if (posts.length) {
     html += '<div class="social-section-header">📸 Recent Posts</div>';
     html += '<div class="social-grid">';
@@ -461,8 +470,8 @@ function renderSocial(data) {
     html += '</div>';
   }
 
-  if (!posts.length && !findings.length) {
-    html += '<div class="error-card">No social media data collected. Instagram scraping may have failed or competitors have no mapped handles.</div>';
+  if (!posts.length && !findings.length && !noToken) {
+    html += '<div class="error-card">No social media data collected. Instagram scraping may have failed.</div>';
   }
   return html;
 }

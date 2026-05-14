@@ -210,6 +210,12 @@ COMPETITOR_SOCIAL = {
 
 async def scrape_social_posts(competitors: list[str]) -> list[dict]:
     """Scrape Instagram posts for competitor pages."""
+    if not APIFY_TOKEN:
+        return [
+            {"competitor": c, "source": "instagram", "error": "no_apify_token"}
+            for c in competitors if c in COMPETITOR_SOCIAL
+        ]
+
     results = []
     handle_to_comp = {}
     direct_urls = []

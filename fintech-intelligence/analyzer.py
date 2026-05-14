@@ -90,16 +90,28 @@ async def analyze_app_store(raw_apps: list[dict]) -> dict:
 async def analyze_news(raw_news: list[dict]) -> dict:
     competitors = _competitors_str(raw_news)
     prompt = (
-        "You are a fintech industry analyst for the Philippines. "
-        f"Summarize recent news and developments for: {competitors}. "
-        "Return ONLY raw JSON, no markdown: "
-        '{"findings":[{"competitor":"name","headline":"headline text",'
-        '"summary":"2 sentences","sentiment":"positive","signal":"bullish",'
-        '"url":null,"date":"approximate date"}],'
+        f"Search the web for news published in the last 3 days about these Philippines fintech companies: {competitors}. "
+        "Find real articles: product launches, funding rounds, partnerships, regulatory updates, app changes. "
+        "Return ONLY raw JSON with real article URLs and dates, no markdown: "
+        '{"findings":[{"competitor":"name","headline":"real headline",'
+        '"summary":"2 sentences about what happened","sentiment":"positive","signal":"bullish",'
+        '"url":"real article url","date":"actual date e.g. May 14 2026"}],'
         '"patterns":["p1","p2"],"takeaway":"overall takeaway"}'
     )
     try:
-        return await _ask_claude(prompt)
+        response = await client.messages.create(
+            model=MODEL,
+            max_tokens=4000,
+            tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}],
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = next(
+            (block.text for block in reversed(response.content) if hasattr(block, "text")),
+            None,
+        )
+        if not text:
+            raise ValueError("No text block in response")
+        return _extract_json(text)
     except Exception as e:
         return {"findings": [], "takeaway": f"Error: {e}"}
 
