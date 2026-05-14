@@ -143,7 +143,7 @@ async def scrape_app_store(competitors: list[str], app_ids: dict[str, dict]) -> 
 async def scrape_news(competitors: list[str]) -> list[dict]:
     """Scrape Google News for competitor mentions."""
     results = []
-    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    week_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
     query = " OR ".join(competitors) + f" Philippines fintech after:{week_ago}"
     try:
         items = await _run_actor(
@@ -198,6 +198,61 @@ COMPETITOR_APP_IDS = {
     "Billease": {"android": "com.billease.app"},
 }
 
+COMPETITOR_SOCIAL = {
+    "GCash": {"instagram": "gcashofficial"},
+    "Maya": {"instagram": "maya.ph"},
+    "HomeCredit": {"instagram": "homecreditph"},
+    "Salmon": {"instagram": "salmonph"},
+    "Maribank": {"instagram": "maribankph"},
+    "Billease": {"instagram": "billease"},
+}
+
+
+async def scrape_social_posts(competitors: list[str]) -> list[dict]:
+    """Scrape Instagram posts for competitor pages."""
+    results = []
+    handle_to_comp = {}
+    direct_urls = []
+
+    for comp in competitors:
+        handle = COMPETITOR_SOCIAL.get(comp, {}).get("instagram")
+        if handle:
+            direct_urls.append(f"https://www.instagram.com/{handle}/")
+            handle_to_comp[handle.lower()] = comp
+
+    if not direct_urls:
+        return results
+
+    try:
+        items = await _run_actor(
+            "apify/instagram-scraper",
+            {
+                "directUrls": direct_urls,
+                "resultsType": "posts",
+                "resultsLimit": 6,
+            },
+        )
+        for item in items:
+            owner = (item.get("ownerUsername") or "").lower()
+            comp = handle_to_comp.get(owner, "Unknown")
+            results.append({
+                "competitor": comp,
+                "source": "instagram",
+                "image_url": item.get("displayUrl", ""),
+                "caption": (item.get("caption") or "")[:300],
+                "likes": item.get("likesCount", 0),
+                "comments": item.get("commentsCount", 0),
+                "date": item.get("timestamp", ""),
+                "post_url": item.get("url", ""),
+                "username": item.get("ownerUsername", ""),
+            })
+    except Exception as e:
+        for comp in competitors:
+            if comp in COMPETITOR_SOCIAL:
+                results.append({"competitor": comp, "source": "instagram", "error": str(e)})
+
+    return results
+
 
 async def run_all_scrapers(competitors: list[str], progress_cb=None) -> dict:
     raw = {}
@@ -225,5 +280,11 @@ async def run_all_scrapers(competitors: list[str], progress_cb=None) -> dict:
     raw["news"] = await scrape_news(competitors)
     if progress_cb:
         await progress_cb("news", "done")
+
+    if progress_cb:
+        await progress_cb("social", "loading")
+    raw["social"] = await scrape_social_posts(competitors)
+    if progress_cb:
+        await progress_cb("social", "done")
 
     return raw

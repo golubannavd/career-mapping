@@ -17,13 +17,14 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 DEFAULT_COMPETITORS = ["GCash", "Maya", "Maribank", "Salmon", "Billease", "HomeCredit"]
-SECTIONS = ["meta_ads", "websites", "app_store", "news", "recommendations"]
+SECTIONS = ["meta_ads", "websites", "app_store", "news", "social", "recommendations"]
 
 SECTION_LABELS = {
     "meta_ads": "Meta Ads",
     "websites": "Websites",
     "app_store": "App Store",
     "news": "News",
+    "social": "Social Media",
     "recommendations": "Recommendations",
 }
 
@@ -73,7 +74,7 @@ async def generate(req: GenerateRequest):
             scrapers.run_all_scrapers(req.competitors, progress_cb)
         )
 
-        scraper_sections = ["meta_ads", "websites", "app_store", "news"]
+        scraper_sections = ["meta_ads", "websites", "app_store", "news", "social"]
         done_scraping: set = set()
         while len(done_scraping) < len(scraper_sections):
             try:
@@ -93,6 +94,7 @@ async def generate(req: GenerateRequest):
             ("websites", analyzer.analyze_websites(raw_data.get("websites", []))),
             ("app_store", analyzer.analyze_app_store(raw_data.get("app_store", []))),
             ("news", analyzer.analyze_news(raw_data.get("news", []))),
+            ("social", analyzer.analyze_social_posts(raw_data.get("social", []))),
         ]
 
         for section_id, coro in analysis_tasks:
@@ -100,6 +102,8 @@ async def generate(req: GenerateRequest):
             yield f"data: {json.dumps({'phase': 'analyzing', 'section': section_id, 'label': label, 'status': 'loading'})}\n\n"
             try:
                 result = await coro
+                if section_id == "social":
+                    result["_raw_posts"] = raw_data.get("social", [])
                 report["sections"][section_id] = result
                 yield f"data: {json.dumps({'phase': 'analyzing', 'section': section_id, 'label': label, 'status': 'done', 'data': result})}\n\n"
             except Exception as e:

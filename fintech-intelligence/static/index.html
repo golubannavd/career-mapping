@@ -120,6 +120,29 @@
   .threat-medium { background: var(--amber-bg); color: var(--amber); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
   .threat-low { background: var(--green-bg); color: var(--green); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
 
+  /* Social grid */
+  .social-section-header { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 20px 0 12px; }
+  .social-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .social-post { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.15s; text-decoration: none; display: block; }
+  .social-post:hover { border-color: var(--accent); }
+  .social-post img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--surface2); }
+  .social-post-img-placeholder { width: 100%; aspect-ratio: 1; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 36px; }
+  .social-post-info { padding: 10px 12px; }
+  .social-post-comp { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .social-post-caption { font-size: 12px; color: var(--muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .social-post-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: var(--gray); }
+
+  /* Tactical actions */
+  .tactical-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+  .tactical-table th { text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .tactical-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .tactical-table tr:last-child td { border-bottom: none; }
+  .tactical-table tr:hover td { background: var(--surface2); }
+  .timeline-week { background: #7f1d1d33; color: var(--red); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .timeline-30 { background: var(--amber-bg); color: var(--amber); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .timeline-90 { background: var(--green-bg); color: var(--green); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .channel-badge { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+
   /* Rating */
   .rating-big { font-size: 32px; font-weight: 700; }
   .rating-good { color: var(--green); }
@@ -178,6 +201,7 @@
     <button class="tab" data-section="websites" disabled>🌐 <span>Websites</span> <span class="tab-status"></span></button>
     <button class="tab" data-section="app_store" disabled>📱 <span>App Store</span> <span class="tab-status"></span></button>
     <button class="tab" data-section="news" disabled>🗞️ <span>News</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="social" disabled>📸 <span>Social</span> <span class="tab-status"></span></button>
     <button class="tab" data-section="recommendations" disabled>💡 <span>Recommendations</span> <span class="tab-status"></span></button>
   </div>
 
@@ -193,6 +217,7 @@
     <div class="panel" id="panel-websites"></div>
     <div class="panel" id="panel-app_store"></div>
     <div class="panel" id="panel-news"></div>
+    <div class="panel" id="panel-social"></div>
     <div class="panel" id="panel-recommendations"></div>
   </div>
 </main>
@@ -206,8 +231,8 @@
 
 <script>
 const DEFAULT_COMPETITORS = ["GCash", "Maya", "Maribank", "Salmon", "Billease", "HomeCredit"];
-const SECTIONS = ["meta_ads", "websites", "app_store", "news", "recommendations"];
-const TOTAL_STEPS = 9; // 4 scraping + 5 analyzing
+const SECTIONS = ["meta_ads", "websites", "app_store", "news", "social", "recommendations"];
+const TOTAL_STEPS = 11; // 5 scraping + 6 analyzing
 
 let competitors = [...DEFAULT_COMPETITORS];
 let currentReport = {};
@@ -384,6 +409,55 @@ function renderNews(data) {
   return html;
 }
 
+function renderSocial(data) {
+  const posts = (data._raw_posts || []).filter(p => p.image_url && !p.error);
+  const findings = data.findings || [];
+  let html = dataSourceBanner(data) + takeawayBox(data.takeaway);
+
+  if (posts.length) {
+    html += '<div class="social-section-header">📸 Recent Posts</div>';
+    html += '<div class="social-grid">';
+    for (const p of posts) {
+      const dateStr = p.date ? new Date(p.date).toLocaleDateString('en-PH', {month:'short', day:'numeric'}) : '';
+      const likesStr = p.likes > 999 ? (p.likes/1000).toFixed(1)+'k' : (p.likes || '–');
+      html += `<a class="social-post" href="${esc(p.post_url)}" target="_blank" rel="noopener">
+        <img src="${esc(p.image_url)}" alt="${esc(p.competitor)} post" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="social-post-img-placeholder" style="display:none">📷</div>
+        <div class="social-post-info">
+          <div class="social-post-comp">${esc(p.competitor)}</div>
+          <div class="social-post-caption">${esc(p.caption || '(no caption)')}</div>
+          <div class="social-post-meta"><span>❤️ ${esc(String(likesStr))}</span><span>${esc(dateStr)}</span></div>
+        </div>
+      </a>`;
+    }
+    html += '</div>';
+  }
+
+  if (findings.length) {
+    html += patternsBox(data.patterns);
+    html += '<div class="social-section-header">AI Analysis by Competitor</div>';
+    html += '<div class="cards-grid">';
+    for (const f of findings) {
+      const themes = (f.content_themes || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+      html += `<div class="card">
+        <div class="card-header"><span class="competitor-tag">${esc(f.competitor)}</span>${signalBadge(f.signal)}</div>
+        <div class="tag-row">${themes}</div>
+        <div class="tag-row">
+          <span class="tag">Freq: <span>${esc(f.posting_frequency)}</span></span>
+          <span class="tag">Tone: <span>${esc(f.tone)}</span></span>
+        </div>
+        <div class="card-body">${esc(f.insight)}</div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  if (!posts.length && !findings.length) {
+    html += '<div class="error-card">No social media data collected. Instagram scraping may have failed or competitors have no mapped handles.</div>';
+  }
+  return html;
+}
+
 function renderRecommendations(data) {
   let html = '';
 
@@ -447,6 +521,27 @@ function renderRecommendations(data) {
   }
 
   html += '</div>';
+
+  // Tactical actions table
+  if ((data.tactical_actions || []).length) {
+    html += `<div style="margin-top:8px;margin-bottom:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">⚡ Tactical Actions — Next 90 Days</div>`;
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px">`;
+    html += `<table class="tactical-table"><thead><tr>
+      <th>Action</th><th>Channel</th><th>Timeline</th><th>Expected Impact</th>
+    </tr></thead><tbody>`;
+    for (const t of data.tactical_actions) {
+      const tl = (t.timeline || '').toLowerCase();
+      const tlClass = tl.includes('week') ? 'timeline-week' : tl.includes('30') ? 'timeline-30' : 'timeline-90';
+      html += `<tr>
+        <td>${esc(t.action)}</td>
+        <td><span class="channel-badge">${esc(t.channel)}</span></td>
+        <td><span class="${tlClass}">${esc(t.timeline)}</span></td>
+        <td style="color:var(--muted)">${esc(t.expected_impact)}</td>
+      </tr>`;
+    }
+    html += '</tbody></table></div>';
+  }
+
   return html;
 }
 
@@ -455,6 +550,7 @@ const RENDERERS = {
   websites: renderWebsites,
   app_store: renderAppStore,
   news: renderNews,
+  social: renderSocial,
   recommendations: renderRecommendations,
 };
 

@@ -104,21 +104,47 @@ async def analyze_news(raw_news: list[dict]) -> dict:
         return {"findings": [], "takeaway": f"Error: {e}"}
 
 
+async def analyze_social_posts(raw_posts: list[dict]) -> dict:
+    competitors = _competitors_str(raw_posts)
+    captions = [
+        f"{p.get('competitor')}: {(p.get('caption') or '')[:150]}"
+        for p in raw_posts if p.get('caption') and not p.get('error')
+    ][:20]
+    captions_str = " | ".join(captions) if captions else "no caption data"
+    prompt = (
+        "You are a fintech social media analyst for the Philippines. "
+        f"Analyze Instagram content strategy of: {competitors}. "
+        f"Recent post captions: {captions_str}. "
+        "Return ONLY raw JSON, no markdown: "
+        '{"findings":[{"competitor":"name","posting_frequency":"daily",'
+        '"content_themes":["theme1","theme2"],"tone":"fun",'
+        '"engagement_style":"contests","top_performing_content":"description",'
+        '"insight":"2 sentences","signal":"bullish"}],'
+        '"patterns":["p1","p2"],"takeaway":"overall takeaway"}'
+    )
+    try:
+        return await _ask_claude(prompt)
+    except Exception as e:
+        return {"findings": [], "takeaway": f"Error: {e}"}
+
+
 async def generate_recommendations(all_sections: dict, competitors: list[str]) -> dict:
     comp_str = ", ".join(competitors)
     meta = all_sections.get("meta_ads", {}).get("takeaway", "N/A")
     web = all_sections.get("websites", {}).get("takeaway", "N/A")
     app = all_sections.get("app_store", {}).get("takeaway", "N/A")
     news = all_sections.get("news", {}).get("takeaway", "N/A")
+    social = all_sections.get("social", {}).get("takeaway", "N/A")
     prompt = (
         f"You are a senior fintech strategy consultant for Philippines. "
         f"Competitors: {comp_str}. "
-        f"Ads: {meta}. Products: {web}. Apps: {app}. News: {news}. "
+        f"Ads: {meta}. Products: {web}. Apps: {app}. News: {news}. Social: {social}. "
         "Return ONLY raw JSON, no markdown: "
         '{"competitive_landscape":"2-3 sentences",'
         '"biggest_threats":[{"competitor":"name","threat":"why dangerous","level":"high"}],'
         '"opportunities":[{"opportunity":"gap","rationale":"why now"}],'
-        '"recommendations":[{"action":"what to do","priority":"high","rationale":"why"}],'
+        '"recommendations":[{"action":"strategic action","priority":"high","rationale":"why","horizon":"6-12 months"}],'
+        '"tactical_actions":[{"action":"specific tactic to run now","channel":"Meta Ads|App Store|Pricing|Product|Content","timeline":"this week|30 days|90 days","expected_impact":"measurable outcome"}],'
         '"watch_list":["thing1","thing2","thing3"]}'
     )
     try:
