@@ -3,7 +3,10 @@ import re
 import os
 import anthropic
 
-client = anthropic.AsyncAnthropic()
+# Strip any hidden non-ASCII characters that copy-paste can introduce into the key
+_raw_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+_clean_key = _raw_key.encode("ascii", errors="ignore").decode("ascii")
+client = anthropic.AsyncAnthropic(api_key=_clean_key)
 MODEL = "claude-sonnet-4-5"
 
 
