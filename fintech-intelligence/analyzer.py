@@ -9,6 +9,12 @@ _clean_key = _raw_key.encode("ascii", errors="ignore").decode("ascii")
 client = anthropic.AsyncAnthropic(api_key=_clean_key)
 MODEL = "claude-sonnet-4-5"
 
+_NO_HALLUCINATE = (
+    "CRITICAL: Only report information you actually find in web search results. "
+    "Do NOT use training knowledge or make up data. "
+    "If you cannot find real data for a competitor, set signal to 'unknown' and note 'no data found in search'. "
+)
+
 
 def _extract_json(text: str) -> dict | list:
     text = re.sub(r"```(?:json)?\s*", "", text).strip()
@@ -18,13 +24,19 @@ def _extract_json(text: str) -> dict | list:
     return json.loads(match.group())
 
 
-async def _ask_claude(prompt: str, max_tokens: int = 4000) -> dict | list:
+async def _ask_claude_with_search(prompt: str, max_uses: int = 5, max_tokens: int = 4000) -> dict | list:
     response = await client.messages.create(
         model=MODEL,
         max_tokens=max_tokens,
+        tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": max_uses}],
         messages=[{"role": "user", "content": prompt}],
     )
-    text = response.content[0].text
+    text = next(
+        (block.text for block in reversed(response.content) if hasattr(block, "text")),
+        None,
+    )
+    if not text:
+        raise ValueError("No text block in response")
     return _extract_json(text)
 
 
@@ -36,53 +48,71 @@ def _competitors_str(raw: list[dict]) -> str:
 async def analyze_meta_ads(raw_ads: list[dict]) -> dict:
     competitors = _competitors_str(raw_ads)
     prompt = (
-        "You are a senior fintech marketing analyst for the Philippines. "
-        f"Analyze the Meta (Facebook/Instagram) ad strategies of: {competitors}. "
+        f"Search the Meta Ads Library (facebook.com/ads/library) and the web for current Facebook and Instagram ads "
+        f"from these Philippines fintech companies: {competitors}. "
+        "Search each company name + 'Philippines' + 'Facebook ads' or 'Instagram ads'. "
+        + _NO_HALLUCINATE +
         "Return ONLY raw JSON, no markdown: "
-        '{"findings":[{"competitor":"name","active_ads_count":"estimate",'
-        '"main_message":"core message","target_audience":"who","tone":"friendly",'
-        '"offers":["offer1"],"cta":"action","insight":"2 sentences","signal":"bullish",'
-        '"sample_ad_url":null}],"patterns":["p1","p2","p3"],'
-        '"takeaway":"overall strategic takeaway"}'
+        '{"findings":[{"competitor":"name","active_ads_count":"real number or unknown",'
+        '"main_message":"found message or null","target_audience":"found or null","tone":"found or null",'
+        '"offers":["real offers found"],"cta":"found or null","insight":"what search actually found","signal":"bullish|bearish|neutral|unknown",'
+        '"sample_ad_url":"real url or null"}],"patterns":["only patterns found in search results"],'
+        '"takeaway":"summary based only on found data, state if data was limited"}'
     )
     try:
-        return await _ask_claude(prompt)
+        return await _ask_claude_with_search(prompt)
     except Exception as e:
         return {"findings": [], "takeaway": f"Error: {e}"}
 
 
 async def analyze_websites(raw_sites: list[dict]) -> dict:
     competitors = _competitors_str(raw_sites)
+    # Include any scraped text if available
+    scraped = [
+        f"{s['competitor']}: {s.get('text','')[:500]}"
+        for s in raw_sites if s.get('text') and not s.get('error')
+    ]
+    scraped_ctx = (" Scraped website content: " + " | ".join(scraped)) if scraped else ""
     prompt = (
-        "You are a fintech product analyst for the Philippines. "
-        f"Analyze products, rates, fees, promos of: {competitors}. "
+        f"Search the official websites and recent articles for these Philippines fintech companies: {competitors}. "
+        "Find their current loan/savings rates, active promotions, product lineup, and positioning."
+        + scraped_ctx + " "
+        + _NO_HALLUCINATE +
         "Return ONLY raw JSON, no markdown: "
-        '{"findings":[{"competitor":"name","products":["p1","p2"],'
-        '"key_rates":["rate1"],"current_promos":["promo1"],'
-        '"positioning":"how positioned","target_segment":"who",'
-        '"insight":"2 sentences","signal":"bullish","url":"website"}],'
-        '"patterns":["p1","p2"],"takeaway":"overall takeaway"}'
+        '{"findings":[{"competitor":"name","products":["real products found"],'
+        '"key_rates":["real rates found e.g. 6% p.a."],"current_promos":["real active promo or none found"],'
+        '"positioning":"found positioning or null","target_segment":"found or null",'
+        '"insight":"what search actually found","signal":"bullish|bearish|neutral|unknown","url":"official site url"}],'
+        '"patterns":["only real patterns from search"],"takeaway":"based only on found data"}'
     )
     try:
-        return await _ask_claude(prompt)
+        return await _ask_claude_with_search(prompt)
     except Exception as e:
         return {"findings": [], "takeaway": f"Error: {e}"}
 
 
 async def analyze_app_store(raw_apps: list[dict]) -> dict:
     competitors = _competitors_str(raw_apps)
+    # Include any scraped app data if available
+    scraped = [
+        f"{a['competitor']}: rating {a.get('rating','?')}, reviews: {[r.get('text','') for r in a.get('recent_reviews',[])[:2]]}"
+        for a in raw_apps if not a.get('error') and a.get('rating')
+    ]
+    scraped_ctx = (" Scraped Play Store data: " + " | ".join(scraped)) if scraped else ""
     prompt = (
-        "You are a fintech product analyst for the Philippines. "
-        f"Analyze Google Play ratings and user sentiment for: {competitors}. "
+        f"Search Google Play Store for the apps of these Philippines fintech companies: {competitors}. "
+        "Find their current ratings, number of reviews, recent user complaints and praises, and latest app updates."
+        + scraped_ctx + " "
+        + _NO_HALLUCINATE +
         "Return ONLY raw JSON, no markdown: "
-        '{"findings":[{"competitor":"name","rating":4.2,'
-        '"rating_signal":"bullish","top_complaints":["c1","c2"],'
-        '"top_praises":["p1","p2"],"recent_update":"what changed",'
-        '"insight":"2 sentences","signal":"bullish"}],'
-        '"patterns":["p1","p2"],"takeaway":"overall takeaway"}'
+        '{"findings":[{"competitor":"name","rating":"real number from Play Store or null",'
+        '"rating_signal":"bullish|bearish|neutral|unknown","top_complaints":["real complaints from reviews"],'
+        '"top_praises":["real praises from reviews"],"recent_update":"real recent update info or null",'
+        '"insight":"what search actually found","signal":"bullish|bearish|neutral|unknown"}],'
+        '"patterns":["only real patterns"],"takeaway":"based only on found data"}'
     )
     try:
-        return await _ask_claude(prompt)
+        return await _ask_claude_with_search(prompt)
     except Exception as e:
         return {"findings": [], "takeaway": f"Error: {e}"}
 
@@ -92,11 +122,12 @@ async def analyze_news(raw_news: list[dict]) -> dict:
     prompt = (
         f"Search the web for news published in the last 3 days about these Philippines fintech companies: {competitors}. "
         "Find real articles: product launches, funding rounds, partnerships, regulatory updates, app changes. "
+        + _NO_HALLUCINATE +
         "Return ONLY raw JSON with real article URLs and dates, no markdown: "
-        '{"findings":[{"competitor":"name","headline":"real headline",'
-        '"summary":"2 sentences about what happened","sentiment":"positive","signal":"bullish",'
+        '{"findings":[{"competitor":"name","headline":"real headline from article",'
+        '"summary":"2 sentences about what actually happened","sentiment":"positive|negative|neutral","signal":"bullish|bearish|neutral",'
         '"url":"real article url","date":"actual date e.g. May 14 2026"}],'
-        '"patterns":["p1","p2"],"takeaway":"overall takeaway"}'
+        '"patterns":["only real patterns"],"takeaway":"based only on found articles, note if few results"}'
     )
     try:
         response = await client.messages.create(
@@ -122,20 +153,21 @@ async def analyze_social_posts(raw_posts: list[dict]) -> dict:
         f"{p.get('competitor')}: {(p.get('caption') or '')[:150]}"
         for p in raw_posts if p.get('caption') and not p.get('error')
     ][:20]
-    captions_str = " | ".join(captions) if captions else "no caption data"
+    scraped_ctx = (" Scraped post captions: " + " | ".join(captions)) if captions else ""
     prompt = (
-        "You are a fintech social media analyst for the Philippines. "
-        f"Analyze Instagram content strategy of: {competitors}. "
-        f"Recent post captions: {captions_str}. "
+        f"Search Instagram and Facebook for recent posts from these Philippines fintech companies: {competitors}. "
+        "Search each company's official Instagram handle and Facebook page for recent content, campaigns, and engagement."
+        + scraped_ctx + " "
+        + _NO_HALLUCINATE +
         "Return ONLY raw JSON, no markdown: "
-        '{"findings":[{"competitor":"name","posting_frequency":"daily",'
-        '"content_themes":["theme1","theme2"],"tone":"fun",'
-        '"engagement_style":"contests","top_performing_content":"description",'
-        '"insight":"2 sentences","signal":"bullish"}],'
-        '"patterns":["p1","p2"],"takeaway":"overall takeaway"}'
+        '{"findings":[{"competitor":"name","posting_frequency":"found or unknown",'
+        '"content_themes":["only themes actually found"],"tone":"found or unknown",'
+        '"engagement_style":"found or unknown","top_performing_content":"real example found or null",'
+        '"insight":"what search actually found","signal":"bullish|bearish|neutral|unknown"}],'
+        '"patterns":["only real patterns found"],"takeaway":"based only on found data"}'
     )
     try:
-        return await _ask_claude(prompt)
+        return await _ask_claude_with_search(prompt)
     except Exception as e:
         return {"findings": [], "takeaway": f"Error: {e}"}
 
@@ -149,17 +181,19 @@ async def generate_recommendations(all_sections: dict, competitors: list[str]) -
     social = all_sections.get("social", {}).get("takeaway", "N/A")
     prompt = (
         f"You are a senior fintech strategy consultant for Philippines. "
-        f"Competitors: {comp_str}. "
+        f"Based ONLY on this verified research data — "
         f"Ads: {meta}. Products: {web}. Apps: {app}. News: {news}. Social: {social}. "
+        f"Competitors analyzed: {comp_str}. "
+        "Do NOT add information beyond what is in the data above. "
         "Return ONLY raw JSON, no markdown: "
-        '{"competitive_landscape":"2-3 sentences",'
-        '"biggest_threats":[{"competitor":"name","threat":"why dangerous","level":"high"}],'
-        '"opportunities":[{"opportunity":"gap","rationale":"why now"}],'
-        '"recommendations":[{"action":"strategic action","priority":"high","rationale":"why","horizon":"6-12 months"}],'
-        '"tactical_actions":[{"action":"specific tactic to run now","channel":"Meta Ads|App Store|Pricing|Product|Content","timeline":"this week|30 days|90 days","expected_impact":"measurable outcome"}],'
-        '"watch_list":["thing1","thing2","thing3"]}'
+        '{"competitive_landscape":"2-3 sentences based only on the data above",'
+        '"biggest_threats":[{"competitor":"name","threat":"specific threat from data","level":"high|medium|low"}],'
+        '"opportunities":[{"opportunity":"specific gap from data","rationale":"evidence from data"}],'
+        '"recommendations":[{"action":"strategic action","priority":"high|medium|low","rationale":"cite which data supports this","horizon":"6-12 months"}],'
+        '"tactical_actions":[{"action":"specific tactic","channel":"Meta Ads|App Store|Pricing|Product|Content","timeline":"this week|30 days|90 days","expected_impact":"measurable outcome"}],'
+        '"watch_list":["specific things to monitor from findings"]}'
     )
     try:
-        return await _ask_claude(prompt)
+        return await _ask_claude_with_search(prompt, max_uses=3)
     except Exception as e:
         return {"competitive_landscape": f"Error: {e}", "recommendations": []}
