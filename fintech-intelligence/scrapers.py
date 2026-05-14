@@ -200,11 +200,12 @@ COMPETITOR_APP_IDS = {
 
 COMPETITOR_SOCIAL = {
     "GCash": {"instagram": "gcashofficial"},
-    "Maya": {"instagram": "maya.ph"},
+    "Maya": {"instagram": "mayaph"},
     "HomeCredit": {"instagram": "homecreditph"},
-    "Salmon": {"instagram": "salmonph"},
-    "Maribank": {"instagram": "maribankph"},
-    "Billease": {"instagram": "billease"},
+    "Salmon": {"instagram": "salmon.ph.app"},
+    "Maribank": {"instagram": "maribank.ph"},
+    "Billease": {"instagram": "billease.ph"},
+    "Gotyme": {"instagram": "gotymebank"},
 }
 
 
@@ -235,22 +236,32 @@ async def scrape_social_posts(competitors: list[str]) -> list[dict]:
             {
                 "directUrls": direct_urls,
                 "resultsType": "posts",
-                "resultsLimit": 6,
+                "resultsLimit": 9,
+                "addParentData": False,
             },
         )
         for item in items:
             owner = (item.get("ownerUsername") or "").lower()
             comp = handle_to_comp.get(owner, "Unknown")
+            # Cover image posts, video thumbnails, and carousel first images
+            image_url = (
+                item.get("displayUrl")
+                or item.get("thumbnailUrl")
+                or item.get("videoThumbnailUrl")
+                or (item.get("images") or [None])[0]
+                or ""
+            )
             results.append({
                 "competitor": comp,
                 "source": "instagram",
-                "image_url": item.get("displayUrl", ""),
+                "image_url": image_url,
                 "caption": (item.get("caption") or "")[:300],
                 "likes": item.get("likesCount", 0),
                 "comments": item.get("commentsCount", 0),
                 "date": item.get("timestamp", ""),
                 "post_url": item.get("url", ""),
                 "username": item.get("ownerUsername", ""),
+                "type": item.get("type", ""),
             })
     except Exception as e:
         for comp in competitors:

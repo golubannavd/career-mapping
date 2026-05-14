@@ -103,7 +103,10 @@ async def generate(req: GenerateRequest):
             try:
                 result = await coro
                 if section_id == "social":
-                    result["_raw_posts"] = raw_data.get("social", [])
+                    raw_posts = raw_data.get("social", [])
+                    result["_raw_posts"] = raw_posts
+                    result["_scrape_count"] = len([p for p in raw_posts if not p.get("error")])
+                    result["_scrape_errors"] = list({p["error"] for p in raw_posts if p.get("error")})
                 report["sections"][section_id] = result
                 yield f"data: {json.dumps({'phase': 'analyzing', 'section': section_id, 'label': label, 'status': 'done', 'data': result})}\n\n"
             except Exception as e:
