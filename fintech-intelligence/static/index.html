@@ -13,6 +13,14 @@
     --green: #22c55e; --green-bg: #14532d; --red: #ef4444; --red-bg: #7f1d1d;
     --amber: #f59e0b; --amber-bg: #78350f; --gray: #64748b;
   }
+  body.light {
+    --bg: #f1f5f9; --surface: #ffffff; --surface2: #f8fafc; --border: #e2e8f0;
+    --text: #0f172a; --muted: #64748b; --accent: #2563eb; --accent2: #7c3aed;
+    --green: #16a34a; --green-bg: #dcfce7; --red: #dc2626; --red-bg: #fee2e2;
+    --amber: #d97706; --amber-bg: #fef3c7; --gray: #94a3b8;
+  }
+  body.light .takeaway { background: #fffbeb; }
+  body.light .tactical-table tr:hover td { background: #f8fafc; }
   body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
 
   /* Header */
@@ -184,6 +192,7 @@
       <span style="font-size:12px;font-weight:400;color:var(--muted)">Philippines</span>
     </div>
     <div class="header-actions">
+      <button class="btn btn-ghost" id="themeBtn">☀️</button>
       <button class="btn btn-ghost" id="copyBtn">📋 Copy Report</button>
       <button class="btn btn-primary" id="generateBtn">Generate Report</button>
     </div>
@@ -743,6 +752,23 @@ document.getElementById('copyBtn').addEventListener('click', () => {
     btn.textContent = '✓ Copied!';
     setTimeout(() => { btn.textContent = '📋 Copy Report'; }, 2000);
   });
+});
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+(function() {
+  const saved = localStorage.getItem('theme') || 'light';
+  if (saved === 'light') document.body.classList.add('light');
+  updateThemeBtn(saved);
+})();
+function updateThemeBtn(theme) {
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const isLight = document.body.classList.toggle('light');
+  const theme = isLight ? 'light' : 'dark';
+  localStorage.setItem('theme', theme);
+  updateThemeBtn(theme);
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
