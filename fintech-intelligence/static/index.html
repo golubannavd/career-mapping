@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fintech Intelligence — Philippines</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --surface2: #273449; --border: #334155;
+    --text: #f1f5f9; --muted: #94a3b8; --accent: #3b82f6; --accent2: #8b5cf6;
+    --green: #22c55e; --green-bg: #14532d; --red: #ef4444; --red-bg: #7f1d1d;
+    --amber: #f59e0b; --amber-bg: #78350f; --gray: #64748b;
+  }
+  body.light {
+    --bg: #f1f5f9; --surface: #ffffff; --surface2: #f8fafc; --border: #e2e8f0;
+    --text: #0f172a; --muted: #64748b; --accent: #2563eb; --accent2: #7c3aed;
+    --green: #16a34a; --green-bg: #dcfce7; --red: #dc2626; --red-bg: #fee2e2;
+    --amber: #d97706; --amber-bg: #fef3c7; --gray: #94a3b8;
+  }
+  body.light .takeaway { background: #fffbeb; }
+  body.light .tactical-table tr:hover td { background: #f8fafc; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+
+  /* Header */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; }
+  .logo-icon { width: 34px; height: 34px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 500; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #2563eb; }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Chips */
+  .chips-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip { display: flex; align-items: center; gap: 5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 500; }
+  .chip-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; line-height: 1; padding: 0; transition: color 0.15s; }
+  .chip-remove:hover { color: var(--red); }
+  .chip-input { background: none; border: 1px dashed var(--border); border-radius: 20px; padding: 4px 10px; color: var(--text); font-family: inherit; font-size: 12px; width: 130px; outline: none; }
+  .chip-input:focus { border-color: var(--accent); }
+  .chip-input::placeholder { color: var(--muted); }
+
+  /* Progress bar */
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin: 10px 0 0; overflow: hidden; display: none; }
+  .progress-bar.active { display: block; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.4s ease; }
+  .progress-label { font-size: 11px; color: var(--muted); margin-top: 4px; display: none; }
+  .progress-label.active { display: block; }
+
+  /* Main */
+  main { padding: 24px; max-width: 1280px; margin: 0 auto; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab { flex: 1; min-width: 130px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 12px; border-radius: 8px; border: none; background: transparent; color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .tab:hover:not(:disabled) { color: var(--text); background: var(--surface2); }
+  .tab.active { background: var(--accent); color: #fff; }
+  .tab:disabled { opacity: 0.4; cursor: not-allowed; }
+  .tab-status { font-size: 12px; }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 80px 24px; color: var(--muted); }
+  .empty-state .icon { font-size: 52px; margin-bottom: 16px; }
+  .empty-state h2 { font-size: 22px; margin-bottom: 8px; color: var(--text); }
+  .empty-state p { max-width: 440px; margin: 0 auto; }
+
+  /* Phase banner */
+  .phase-banner { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+  .phase-badge { background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Cards */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; transition: border-color 0.15s; }
+  .card:hover { border-color: var(--accent); }
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .competitor-tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .signal-badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .signal-bullish { background: var(--green-bg); color: var(--green); }
+  .signal-bearish { background: var(--red-bg); color: var(--red); }
+  .signal-watch { background: var(--amber-bg); color: var(--amber); }
+  .signal-neutral { background: var(--surface2); color: var(--gray); border: 1px solid var(--border); }
+  .card-headline { font-size: 14px; font-weight: 600; line-height: 1.4; }
+  .card-body { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .card-link a { font-size: 12px; color: var(--accent); text-decoration: none; display: flex; align-items: center; gap: 4px; }
+  .card-link a:hover { text-decoration: underline; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-size: 11px; color: var(--muted); }
+  .tag span { color: var(--text); font-weight: 500; }
+
+  /* Ad image */
+  .ad-image { width: 100%; border-radius: 8px; object-fit: cover; max-height: 180px; border: 1px solid var(--border); }
+
+  /* Takeaway */
+  .takeaway { background: #1c1507; border: 1px solid var(--amber); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; gap: 12px; }
+  .takeaway-icon { font-size: 20px; flex-shrink: 0; }
+  .takeaway-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--amber); margin-bottom: 4px; }
+  .takeaway-text { font-size: 14px; color: #fef3c7; line-height: 1.6; }
+
+  /* Patterns */
+  .patterns-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
+  .patterns-box h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .pattern-item { display: flex; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+  .pattern-item::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+
+  /* Recommendations */
+  .rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .rec-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .rec-card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 10px; }
+  .rec-item { display: flex; gap: 8px; margin-bottom: 10px; font-size: 13px; }
+  .rec-bullet { color: var(--accent); font-weight: 700; flex-shrink: 0; }
+  .rec-text { color: var(--text); }
+  .rec-rationale { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .priority-high { color: var(--red); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .priority-medium { color: var(--amber); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .priority-low { color: var(--green); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .threat-high { background: var(--red-bg); color: var(--red); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .threat-medium { background: var(--amber-bg); color: var(--amber); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .threat-low { background: var(--green-bg); color: var(--green); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+
+  /* Social grid */
+  .social-section-header { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 20px 0 12px; }
+  .social-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .social-post { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.15s; text-decoration: none; display: block; }
+  .social-post:hover { border-color: var(--accent); }
+  .social-post img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--surface2); }
+  .social-post-img-placeholder { width: 100%; aspect-ratio: 1; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 36px; }
+  .social-post-info { padding: 10px 12px; }
+  .social-post-comp { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .social-post-caption { font-size: 12px; color: var(--muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .social-post-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: var(--gray); }
+
+  /* Tactical actions */
+  .tactical-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+  .tactical-table th { text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .tactical-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .tactical-table tr:last-child td { border-bottom: none; }
+  .tactical-table tr:hover td { background: var(--surface2); }
+  .timeline-week { background: #7f1d1d33; color: var(--red); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .timeline-30 { background: var(--amber-bg); color: var(--amber); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .timeline-90 { background: var(--green-bg); color: var(--green); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .channel-badge { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+
+  /* Rating */
+  .rating-big { font-size: 32px; font-weight: 700; }
+  .rating-good { color: var(--green); }
+  .rating-ok { color: var(--amber); }
+  .rating-bad { color: var(--red); }
+
+  /* Error card */
+  .error-card { background: var(--red-bg); border: 1px solid var(--red); border-radius: 12px; padding: 16px 20px; color: var(--red); font-size: 13px; margin-bottom: 20px; }
+
+  /* Section loading */
+  .section-loading { display: flex; align-items: center; gap: 12px; padding: 60px; justify-content: center; color: var(--muted); font-size: 14px; }
+
+  /* Footer */
+  footer { background: var(--surface); border-top: 1px solid var(--border); padding: 20px 24px; margin-top: 40px; }
+  .footer-inner { max-width: 1280px; margin: 0 auto; }
+  .footer-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .report-list { display: flex; flex-wrap: wrap; gap: 10px; }
+  .report-item { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: border-color 0.15s; }
+  .report-item:hover { border-color: var(--accent); }
+  .report-item.active-report { border-color: var(--accent); background: #1e3a5f; }
+  .report-date { font-size: 12px; font-weight: 600; }
+  .report-comps { font-size: 11px; color: var(--muted); }
+  .report-delete { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; margin-left: 4px; transition: color 0.15s; }
+  .report-delete:hover { color: var(--red); }
+  .no-reports { font-size: 13px; color: var(--muted); }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-icon">🔭</div>
+      Fintech Intelligence
+      <span style="font-size:12px;font-weight:400;color:var(--muted)">Philippines</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="themeBtn">☀️</button>
+      <button class="btn btn-ghost" id="copyBtn">📋 Copy Report</button>
+      <button class="btn btn-primary" id="generateBtn">Generate Report</button>
+    </div>
+  </div>
+  <div class="chips-row" id="chipsRow">
+    <input class="chip-input" id="chipInput" placeholder="+ Add competitor" />
+  </div>
+  <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="progress-label" id="progressLabel"></div>
+</header>
+
+<main>
+  <div class="tabs" id="tabs">
+    <button class="tab" data-section="meta_ads" disabled>📣 <span>Meta Ads</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="websites" disabled>🌐 <span>Websites</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="app_store" disabled>📱 <span>App Store</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="news" disabled>🗞️ <span>News</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="social" disabled>📸 <span>Social</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="recommendations" disabled>💡 <span>Recommendations</span> <span class="tab-status"></span></button>
+  </div>
+
+  <div id="panels">
+    <div class="panel active" id="panel-empty">
+      <div class="empty-state">
+        <div class="icon">🇵🇭</div>
+        <h2>Ready to monitor</h2>
+        <p>Select your competitors and click <strong>Generate Report</strong>. The tool will scrape real data from Meta Ads, websites, App Store and news, then analyze everything with AI.</p>
+      </div>
+    </div>
+    <div class="panel" id="panel-meta_ads"></div>
+    <div class="panel" id="panel-websites"></div>
+    <div class="panel" id="panel-app_store"></div>
+    <div class="panel" id="panel-news"></div>
+    <div class="panel" id="panel-social"></div>
+    <div class="panel" id="panel-recommendations"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-title">Saved Reports</div>
+    <div class="report-list" id="reportList"><span class="no-reports">No saved reports yet.</span></div>
+  </div>
+</footer>
+
+<script>
+const DEFAULT_COMPETITORS = ["GCash", "Maya", "Maribank", "Salmon", "Billease", "HomeCredit"];
+const SECTIONS = ["meta_ads", "websites", "app_store", "news", "social", "recommendations"];
+const TOTAL_STEPS = 11; // 5 scraping + 6 analyzing
+
+let competitors = [...DEFAULT_COMPETITORS];
+let currentReport = {};
+let isGenerating = false;
+let activeSection = null;
+let activeReportId = null;
+let stepsDone = 0;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function signalBadge(s) {
+  const v = (s || 'neutral').toLowerCase();
+  return `<span class="signal-badge signal-${v}">${esc(v)}</span>`;
+}
+function takeawayBox(text) {
+  if (!text) return '';
+  return `<div class="takeaway"><div class="takeaway-icon">💡</div><div><div class="takeaway-label">Strategic Takeaway</div><div class="takeaway-text">${esc(text)}</div></div></div>`;
+}
+function patternsBox(patterns) {
+  if (!patterns || !patterns.length) return '';
+  return `<div class="patterns-box"><h3>Patterns</h3>${patterns.map(p=>`<div class="pattern-item">${esc(p)}</div>`).join('')}</div>`;
+}
+
+// ── Chips ─────────────────────────────────────────────────────────────────────
+function renderChips() {
+  const row = document.getElementById('chipsRow');
+  const input = document.getElementById('chipInput');
+  row.querySelectorAll('.chip').forEach(c => c.remove());
+  competitors.forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.innerHTML = `${esc(name)} <button class="chip-remove" data-name="${esc(name)}">×</button>`;
+    row.insertBefore(chip, input);
+  });
+}
+document.getElementById('chipsRow').addEventListener('click', e => {
+  const btn = e.target.closest('.chip-remove');
+  if (btn) { competitors = competitors.filter(c => c !== btn.dataset.name); renderChips(); }
+});
+document.getElementById('chipInput').addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ',') && e.target.value.trim()) {
+    e.preventDefault();
+    const name = e.target.value.trim().replace(/,$/, '');
+    if (name && !competitors.includes(name)) { competitors.push(name); renderChips(); }
+    e.target.value = '';
+  }
+});
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function setTabStatus(section, status) {
+  const tab = document.querySelector(`.tab[data-section="${section}"]`);
+  if (!tab) return;
+  const el = tab.querySelector('.tab-status');
+  if (status === 'loading') { el.textContent = '⏳'; tab.disabled = false; }
+  else if (status === 'done') { el.textContent = '✓'; tab.disabled = false; }
+  else if (status === 'error') { el.textContent = '✗'; tab.disabled = false; }
+  else { el.textContent = ''; tab.disabled = true; }
+}
+function activateTab(section) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const tab = document.querySelector(`.tab[data-section="${section}"]`);
+  if (tab) tab.classList.add('active');
+  const panel = document.getElementById(`panel-${section}`);
+  if (panel) panel.classList.add('active');
+  activeSection = section;
+}
+document.getElementById('tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (tab && !tab.disabled) activateTab(tab.dataset.section);
+});
+
+// ── Renderers ─────────────────────────────────────────────────────────────────
+function dataSourceBanner(data) {
+  let html = '';
+  if (data.data_source === 'web_search_fallback') {
+    html += `<div style="background:#1e293b;border:1px solid #3b82f6;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:#94a3b8;display:flex;gap:8px;align-items:center">
+      <span>🔍</span> <span><strong style="color:#3b82f6">Web search fallback</strong> — Apify scraping failed, data sourced via Claude web search. May be less precise than live scraping.</span>
+    </div>`;
+  }
+  if (data._scrape_errors && data._scrape_errors.length) {
+    html += `<div style="background:#7f1d1d22;border:1px solid #ef444466;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:#fca5a5">
+      ⚠️ Scrape errors: ${data._scrape_errors.map(e => esc(e)).join(' | ')}
+    </div>`;
+  }
+  return html;
+}
+
+function renderMetaAds(data) {
+  const findings = data.findings || [];
+  let html = dataSourceBanner(data) + takeawayBox(data.takeaway) + patternsBox(data.patterns);
+  html += '<div class="cards-grid">';
+  for (const f of findings) {
+    const offers = (f.offers || []).map(o => `<span class="tag">${esc(o)}</span>`).join('');
+    html += `<div class="card">
+      <div class="card-header"><span class="competitor-tag">${esc(f.competitor)}</span>${signalBadge(f.signal)}</div>
+      <div class="card-headline">${esc(f.main_message)}</div>
+      <div class="tag-row">${offers}</div>
+      <div class="tag-row">
+        <span class="tag">Audience: <span>${esc(f.target_audience)}</span></span>
+        <span class="tag">Tone: <span>${esc(f.tone)}</span></span>
+        <span class="tag">CTA: <span>${esc(f.cta)}</span></span>
+      </div>
+      <div class="card-body">${esc(f.insight)}</div>
+      ${f.sample_ad_url && f.sample_ad_url !== 'null' ? `<div class="card-link"><a href="${esc(f.sample_ad_url)}" target="_blank" rel="noopener">🔗 View Ad in Meta Library</a></div>` : ''}
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderWebsites(data) {
+  const findings = data.findings || [];
+  let html = dataSourceBanner(data) + takeawayBox(data.takeaway) + patternsBox(data.patterns);
+  html += '<div class="cards-grid">';
+  for (const f of findings) {
+    const products = (f.products || []).map(p => `<span class="tag">${esc(p)}</span>`).join('');
+    const promos = (f.current_promos || []).map(p => `<span class="tag" style="color:var(--green)">${esc(p)}</span>`).join('');
+    html += `<div class="card">
+      <div class="card-header"><span class="competitor-tag">${esc(f.competitor)}</span>${signalBadge(f.signal)}</div>
+      <div class="card-headline">${esc(f.positioning)}</div>
+      <div class="tag-row">${products}</div>
+      ${promos ? `<div class="tag-row">${promos}</div>` : ''}
+      <div class="tag-row"><span class="tag">Rates: <span>${(f.key_rates || []).join(' · ')}</span></span></div>
+      <div class="card-body">${esc(f.insight)}</div>
+      ${f.url ? `<div class="card-link"><a href="${esc(f.url)}" target="_blank" rel="noopener">🔗 ${esc(f.url)}</a></div>` : ''}
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderAppStore(data) {
+  const findings = data.findings || [];
+  let html = dataSourceBanner(data) + takeawayBox(data.takeaway) + patternsBox(data.patterns);
+  html += '<div class="cards-grid">';
+  for (const f of findings) {
+    const rating = parseFloat(f.rating) || 0;
+    const ratingClass = rating >= 4.2 ? 'rating-good' : rating >= 3.5 ? 'rating-ok' : 'rating-bad';
+    const complaints = (f.top_complaints || []).map(c => `<div style="font-size:12px;color:var(--red)">⚠ ${esc(c)}</div>`).join('');
+    const praises = (f.top_praises || []).map(p => `<div style="font-size:12px;color:var(--green)">✓ ${esc(p)}</div>`).join('');
+    html += `<div class="card">
+      <div class="card-header"><span class="competitor-tag">${esc(f.competitor)}</span>${signalBadge(f.rating_signal || f.signal)}</div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span class="rating-big ${ratingClass}">${rating.toFixed(1)}</span>
+        <span style="color:var(--muted);font-size:12px">/ 5.0 Google Play</span>
+      </div>
+      ${praises}${complaints}
+      <div class="card-body">${esc(f.insight)}</div>
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderNews(data) {
+  const findings = data.findings || [];
+  let html = dataSourceBanner(data) + takeawayBox(data.takeaway) + patternsBox(data.patterns);
+  html += '<div class="cards-grid">';
+  for (const f of findings) {
+    const sentColor = f.sentiment === 'positive' ? 'var(--green)' : f.sentiment === 'negative' ? 'var(--red)' : 'var(--muted)';
+    html += `<div class="card">
+      <div class="card-header"><span class="competitor-tag">${esc(f.competitor)}</span>${signalBadge(f.signal)}</div>
+      <div class="card-headline">${esc(f.headline)}</div>
+      <div class="card-body">${esc(f.summary)}</div>
+      <div style="font-size:12px;color:${sentColor};font-weight:500">${esc(f.sentiment)} ${f.date ? '· ' + esc(f.date) : ''}</div>
+      ${f.url && f.url !== 'null' ? `<div class="card-link"><a href="${esc(f.url)}" target="_blank" rel="noopener">🔗 Read article</a></div>` : ''}
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderSocial(data) {
+  const posts = (data._raw_posts || []).filter(p => p.image_url && !p.error);
+  const findings = data.findings || [];
+  let html = dataSourceBanner(data) + takeawayBox(data.takeaway);
+
+  const rawPosts = data._raw_posts || [];
+  const scrapeCount = data._scrape_count || 0;
+  const scrapeErrors = data._scrape_errors || [];
+  const noToken = rawPosts.some(p => p.error === 'no_apify_token');
+
+  if (noToken) {
+    html += `<div class="phase-banner"><span class="phase-badge">Setup needed</span>
+      Instagram post images require <strong>APIFY_TOKEN</strong> in Render → Environment.
+      Copy your token from <a href="https://console.apify.com/account/integrations" target="_blank" style="color:var(--accent)">console.apify.com → Integrations</a> and add it as an env variable, then redeploy.
+    </div>`;
+  } else if (!posts.length && !noToken) {
+    const errDetail = scrapeErrors.length ? ` Apify error: ${scrapeErrors.join(', ')}` : ' Apify returned 0 posts — Instagram handles may be incorrect or accounts are private.';
+    html += `<div class="error-card">⚠️ No post images collected (APIFY_TOKEN is set).${esc(errDetail)}</div>`;
+  }
+
+  if (posts.length) {
+    html += `<div class="social-section-header">📸 Recent Posts (${posts.length} scraped)</div>`;
+    html += '<div class="social-grid">';
+    for (const p of posts) {
+      const dateStr = p.date ? new Date(p.date).toLocaleDateString('en-PH', {month:'short', day:'numeric'}) : '';
+      const likesStr = p.likes > 999 ? (p.likes/1000).toFixed(1)+'k' : (p.likes || '–');
+      html += `<a class="social-post" href="${esc(p.post_url)}" target="_blank" rel="noopener">
+        <img src="${esc(p.image_url)}" alt="${esc(p.competitor)} post" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="social-post-img-placeholder" style="display:none">📷</div>
+        <div class="social-post-info">
+          <div class="social-post-comp">${esc(p.competitor)}</div>
+          <div class="social-post-caption">${esc(p.caption || '(no caption)')}</div>
+          <div class="social-post-meta"><span>❤️ ${esc(String(likesStr))}</span><span>${esc(dateStr)}</span></div>
+        </div>
+      </a>`;
+    }
+    html += '</div>';
+  }
+
+  if (findings.length) {
+    html += patternsBox(data.patterns);
+    html += '<div class="social-section-header">AI Analysis by Competitor</div>';
+    html += '<div class="cards-grid">';
+    for (const f of findings) {
+      const themes = (f.content_themes || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+      html += `<div class="card">
+        <div class="card-header"><span class="competitor-tag">${esc(f.competitor)}</span>${signalBadge(f.signal)}</div>
+        <div class="tag-row">${themes}</div>
+        <div class="tag-row">
+          <span class="tag">Freq: <span>${esc(f.posting_frequency)}</span></span>
+          <span class="tag">Tone: <span>${esc(f.tone)}</span></span>
+        </div>
+        <div class="card-body">${esc(f.insight)}</div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  return html;
+}
+
+function renderRecommendations(data) {
+  let html = '';
+
+  if (data.competitive_landscape) {
+    html += `<div class="takeaway"><div class="takeaway-icon">🌏</div><div><div class="takeaway-label">Competitive Landscape</div><div class="takeaway-text">${esc(data.competitive_landscape)}</div></div></div>`;
+  }
+
+  html += '<div class="rec-grid">';
+
+  // Biggest threats
+  if ((data.biggest_threats || []).length) {
+    html += `<div class="rec-card"><div class="rec-card-title">⚠️ Biggest Threats</div>`;
+    for (const t of data.biggest_threats) {
+      const tl = (t.level || 'medium').toLowerCase();
+      html += `<div class="rec-item"><span class="rec-bullet">•</span><div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+          <strong>${esc(t.competitor)}</strong>
+          <span class="threat-${tl}">${esc(tl)}</span>
+        </div>
+        <div class="rec-rationale">${esc(t.threat)}</div>
+      </div></div>`;
+    }
+    html += '</div>';
+  }
+
+  // Opportunities
+  if ((data.opportunities || []).length) {
+    html += `<div class="rec-card"><div class="rec-card-title">✦ Opportunities</div>`;
+    for (const o of data.opportunities) {
+      html += `<div class="rec-item"><span class="rec-bullet">✦</span><div>
+        <div class="rec-text">${esc(o.opportunity)}</div>
+        <div class="rec-rationale">${esc(o.rationale)}</div>
+      </div></div>`;
+    }
+    html += '</div>';
+  }
+
+  // Recommendations
+  if ((data.recommendations || []).length) {
+    html += `<div class="rec-card"><div class="rec-card-title">🎯 Action Items</div>`;
+    for (const r of data.recommendations) {
+      const prio = (r.priority || 'medium').toLowerCase();
+      html += `<div class="rec-item"><span class="rec-bullet">→</span><div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <span class="priority-${prio}">${esc(prio)}</span>
+        </div>
+        <div class="rec-text">${esc(r.action)}</div>
+        <div class="rec-rationale">${esc(r.rationale)}</div>
+      </div></div>`;
+    }
+    html += '</div>';
+  }
+
+  // Watch list
+  if ((data.watch_list || []).length) {
+    html += `<div class="rec-card"><div class="rec-card-title">👁 Watch List</div>`;
+    for (const w of data.watch_list) {
+      html += `<div class="rec-item"><span class="rec-bullet">•</span><div class="rec-text">${esc(w)}</div></div>`;
+    }
+    html += '</div>';
+  }
+
+  html += '</div>';
+
+  // Tactical actions table
+  if ((data.tactical_actions || []).length) {
+    html += `<div style="margin-top:8px;margin-bottom:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">⚡ Tactical Actions — Next 90 Days</div>`;
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px">`;
+    html += `<table class="tactical-table"><thead><tr>
+      <th>Action</th><th>Channel</th><th>Timeline</th><th>Expected Impact</th>
+    </tr></thead><tbody>`;
+    for (const t of data.tactical_actions) {
+      const tl = (t.timeline || '').toLowerCase();
+      const tlClass = tl.includes('week') ? 'timeline-week' : tl.includes('30') ? 'timeline-30' : 'timeline-90';
+      html += `<tr>
+        <td>${esc(t.action)}</td>
+        <td><span class="channel-badge">${esc(t.channel)}</span></td>
+        <td><span class="${tlClass}">${esc(t.timeline)}</span></td>
+        <td style="color:var(--muted)">${esc(t.expected_impact)}</td>
+      </tr>`;
+    }
+    html += '</tbody></table></div>';
+  }
+
+  return html;
+}
+
+const RENDERERS = {
+  meta_ads: renderMetaAds,
+  websites: renderWebsites,
+  app_store: renderAppStore,
+  news: renderNews,
+  social: renderSocial,
+  recommendations: renderRecommendations,
+};
+
+function renderSection(section, data) {
+  const panel = document.getElementById(`panel-${section}`);
+  if (!panel) return;
+  if (data.error) {
+    panel.innerHTML = `<div class="error-card">⚠️ Error: ${esc(data.error)}</div>`;
+    return;
+  }
+  const renderer = RENDERERS[section];
+  if (renderer) panel.innerHTML = renderer(data);
+}
+
+// ── Progress ──────────────────────────────────────────────────────────────────
+function updateProgress(label) {
+  stepsDone++;
+  const pct = Math.min((stepsDone / TOTAL_STEPS) * 100, 95);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+// ── Generate ──────────────────────────────────────────────────────────────────
+document.getElementById('generateBtn').addEventListener('click', startGenerate);
+
+async function startGenerate() {
+  if (isGenerating || competitors.length === 0) return;
+  isGenerating = true;
+  stepsDone = 0;
+  currentReport = {};
+  activeReportId = null;
+  activeSection = null;
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Running...';
+
+  SECTIONS.forEach(s => {
+    setTabStatus(s, null);
+    const p = document.getElementById(`panel-${s}`);
+    if (p) p.innerHTML = '';
+  });
+
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-empty').classList.add('active');
+
+  document.getElementById('progressBar').classList.add('active');
+  document.getElementById('progressLabel').classList.add('active');
+  document.getElementById('progressFill').style.width = '0%';
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ competitors }),
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let ev; try { ev = JSON.parse(line.slice(6)); } catch { continue; }
+        handleEvent(ev, btn);
+      }
+    }
+  } catch (err) {
+    btn.innerHTML = 'Generate Report';
+    btn.disabled = false;
+    isGenerating = false;
+    alert('Error: ' + err.message);
+  }
+}
+
+function handleEvent(ev, btn) {
+  const label = ev.label || ev.section || '';
+
+  if (ev.phase === 'scraping') {
+    if (ev.status === 'loading') {
+      btn.innerHTML = `<div class="spinner"></div> Scraping ${label}...`;
+      document.getElementById('progressLabel').textContent = `Collecting data: ${label}`;
+    } else if (ev.status === 'done') {
+      updateProgress(`Scraped: ${label}`);
+    }
+    return;
+  }
+
+  if (ev.phase === 'analyzing') {
+    if (ev.status === 'loading') {
+      setTabStatus(ev.section, 'loading');
+      const panel = document.getElementById(`panel-${ev.section}`);
+      if (panel) panel.innerHTML = `<div class="section-loading"><div class="spinner"></div> Analyzing ${label}...</div>`;
+      btn.innerHTML = `<div class="spinner"></div> Analyzing ${label}...`;
+      if (!activeSection) activateTab(ev.section);
+    } else if (ev.status === 'done') {
+      setTabStatus(ev.section, 'done');
+      currentReport[ev.section] = ev.data;
+      renderSection(ev.section, ev.data);
+      updateProgress(`Analyzed: ${label}`);
+      if (activeSection === ev.section) activateTab(ev.section);
+    } else if (ev.status === 'error') {
+      setTabStatus(ev.section, 'error');
+      renderSection(ev.section, { error: ev.error });
+    }
+    return;
+  }
+
+  if (ev.status === 'complete') {
+    btn.innerHTML = 'Generate Report';
+    btn.disabled = false;
+    isGenerating = false;
+    activeReportId = ev.report_id;
+    document.getElementById('progressFill').style.width = '100%';
+    setTimeout(() => {
+      document.getElementById('progressBar').classList.remove('active');
+      document.getElementById('progressLabel').classList.remove('active');
+    }, 1500);
+    loadReportList();
+    if (!activeSection) {
+      const first = document.querySelector('.tab:not([disabled])');
+      if (first) activateTab(first.dataset.section);
+    }
+  }
+}
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+async function loadReportList() {
+  const res = await fetch('/api/reports');
+  const reports = await res.json();
+  const list = document.getElementById('reportList');
+  if (!reports.length) { list.innerHTML = '<span class="no-reports">No saved reports yet.</span>'; return; }
+  list.innerHTML = reports.map(r => `
+    <div class="report-item ${r.id === activeReportId ? 'active-report' : ''}" data-id="${esc(r.id)}">
+      <div>
+        <div class="report-date">${esc(r.date || r.id)}</div>
+        <div class="report-comps">${esc((r.competitors || []).join(', '))}</div>
+      </div>
+      <button class="report-delete" data-id="${esc(r.id)}">×</button>
+    </div>`).join('');
+}
+
+document.getElementById('reportList').addEventListener('click', async e => {
+  const del = e.target.closest('.report-delete');
+  if (del) {
+    e.stopPropagation();
+    if (!confirm('Delete this report?')) return;
+    await fetch(`/api/reports/${encodeURIComponent(del.dataset.id)}`, { method: 'DELETE' });
+    loadReportList();
+    return;
+  }
+  const item = e.target.closest('.report-item');
+  if (item) loadReport(item.dataset.id);
+});
+
+async function loadReport(id) {
+  const res = await fetch(`/api/reports/${encodeURIComponent(id)}`);
+  if (!res.ok) return;
+  const report = await res.json();
+  activeReportId = id;
+  currentReport = report.sections || {};
+  competitors = report.competitors || [];
+  renderChips();
+  SECTIONS.forEach(s => { setTabStatus(s, null); const p = document.getElementById(`panel-${s}`); if (p) p.innerHTML = ''; });
+  for (const [section, data] of Object.entries(currentReport)) {
+    setTabStatus(section, data.error ? 'error' : 'done');
+    renderSection(section, data);
+  }
+  const first = document.querySelector('.tab:not([disabled])');
+  if (first) activateTab(first.dataset.section);
+  loadReportList();
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────────────
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const lines = ['FINTECH INTELLIGENCE REPORT — Philippines', '='.repeat(50), ''];
+  for (const [s, d] of Object.entries(currentReport)) {
+    lines.push(`── ${s.toUpperCase()} ──`);
+    lines.push(JSON.stringify(d, null, 2));
+    lines.push('');
+  }
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = '📋 Copy Report'; }, 2000);
+  });
+});
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+(function() {
+  const saved = localStorage.getItem('theme') || 'light';
+  if (saved === 'light') document.body.classList.add('light');
+  updateThemeBtn(saved);
+})();
+function updateThemeBtn(theme) {
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const isLight = document.body.classList.toggle('light');
+  const theme = isLight ? 'light' : 'dark';
+  localStorage.setItem('theme', theme);
+  updateThemeBtn(theme);
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderChips();
+loadReportList();
+</script>
+</body>
+</html>

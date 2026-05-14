@@ -1,0 +1,305 @@
+import httpx
+import asyncio
+import os
+from datetime import datetime, timedelta
+
+APIFY_TOKEN = os.getenv("APIFY_TOKEN", "")
+APIFY_BASE = "https://api.apify.com/v2"
+
+
+async def _run_actor(actor_id: str, run_input: dict, timeout: int = 240) -> list[dict]:
+    """Run an Apify actor and return dataset items."""
+    async with httpx.AsyncClient(timeout=300) as client:
+        # Start actor run
+        resp = await client.post(
+            f"{APIFY_BASE}/acts/{actor_id}/runs",
+            params={"token": APIFY_TOKEN},
+            json=run_input,
+        )
+        if resp.status_code != 201:
+            raise RuntimeError(f"Failed to start actor {actor_id}: {resp.status_code} {resp.text[:300]}")
+
+        run = resp.json()["data"]
+        run_id = run["id"]
+
+        # Poll until finished
+        polls = timeout // 5
+        status = "RUNNING"
+        for _ in range(polls):
+            await asyncio.sleep(5)
+            status_resp = await client.get(
+                f"{APIFY_BASE}/actor-runs/{run_id}",
+                params={"token": APIFY_TOKEN},
+            )
+            status = status_resp.json()["data"]["status"]
+            if status == "SUCCEEDED":
+                break
+            elif status in ("FAILED", "ABORTED", "TIMED-OUT"):
+                raise RuntimeError(f"Actor {actor_id} ended with status: {status}")
+
+        if status != "SUCCEEDED":
+            raise RuntimeError(f"Actor {actor_id} timed out (still {status} after {timeout}s)")
+
+        dataset_id = status_resp.json()["data"]["defaultDatasetId"]
+        items_resp = await client.get(
+            f"{APIFY_BASE}/datasets/{dataset_id}/items",
+            params={"token": APIFY_TOKEN, "format": "json", "limit": 100},
+        )
+        items = items_resp.json()
+        if not isinstance(items, list):
+            raise RuntimeError(f"Unexpected dataset response: {str(items)[:200]}")
+        return items
+
+
+async def scrape_meta_ads(competitors: list[str]) -> list[dict]:
+    """Meta Ads Library — no reliable public Apify actor exists, signal web search fallback."""
+    return [
+        {"competitor": c, "source": "meta_ads", "error": "no_apify_actor"}
+        for c in competitors
+    ]
+
+
+async def scrape_websites(competitors: list[str], urls: dict[str, str]) -> list[dict]:
+    """Scrape competitor websites for product info, rates, offers."""
+    results = []
+    competitor_urls = [{"competitor": c, "url": urls[c]} for c in competitors if c in urls]
+    if not competitor_urls:
+        return results
+
+    try:
+        items = await _run_actor(
+            "apify/cheerio-scraper",
+            {
+                "startUrls": [{"url": u["url"]} for u in competitor_urls],
+                "maxCrawlPages": 2,
+                "maxConcurrency": 3,
+                "pageFunction": """async function pageFunction(context) {
+                    const { $, request } = context;
+                    const title = $('title').text().trim();
+                    const text = $('body').text().replace(/\\s+/g, ' ').trim().slice(0, 4000);
+                    return { url: request.url, title, text };
+                }""",
+            },
+        )
+        for item in items:
+            competitor = next(
+                (u["competitor"] for u in competitor_urls if u["url"] in item.get("url", "")),
+                "Unknown",
+            )
+            results.append({
+                "competitor": competitor,
+                "source": "website",
+                "url": item.get("url", ""),
+                "title": item.get("title", ""),
+                "text": item.get("text", ""),
+            })
+    except Exception as e:
+        for u in competitor_urls:
+            results.append({"competitor": u["competitor"], "source": "website", "error": str(e)})
+
+    return results
+
+
+async def scrape_app_store(competitors: list[str], app_ids: dict[str, dict]) -> list[dict]:
+    """Scrape Google Play ratings and reviews."""
+    results = []
+    for comp in competitors:
+        if comp not in app_ids:
+            continue
+        android_id = app_ids[comp].get("android", "")
+        if not android_id:
+            continue
+        try:
+            items = await _run_actor(
+                "apify/google-play-scraper",
+                {
+                    "appIds": [android_id],
+                    "language": "en",
+                    "country": "ph",
+                    "numberOfReviews": 10,
+                },
+            )
+            for item in items:
+                results.append({
+                    "competitor": comp,
+                    "source": "google_play",
+                    "app_name": item.get("title", comp),
+                    "rating": item.get("score", 0),
+                    "reviews_count": item.get("ratings", 0),
+                    "version": item.get("version", ""),
+                    "updated": item.get("updated", ""),
+                    "description": (item.get("description", "") or "")[:500],
+                    "recent_reviews": [
+                        {"text": r.get("text", ""), "score": r.get("score", 0), "date": r.get("date", "")}
+                        for r in (item.get("reviews") or [])[:5]
+                    ],
+                })
+        except Exception as e:
+            results.append({"competitor": comp, "source": "google_play", "error": str(e)})
+
+    return results
+
+
+async def scrape_news(competitors: list[str]) -> list[dict]:
+    """Scrape Google News for competitor mentions."""
+    results = []
+    week_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
+    query = " OR ".join(competitors) + f" Philippines fintech after:{week_ago}"
+    try:
+        items = await _run_actor(
+            "apify/google-search-scraper",
+            {
+                "queries": query,
+                "maxPagesPerQuery": 1,
+                "resultsPerPage": 20,
+                "countryCode": "ph",
+                "languageCode": "en",
+            },
+        )
+        for item in items:
+            for result in item.get("organicResults", []):
+                title = result.get("title", "")
+                snippet = result.get("description", "")
+                url = result.get("url", "")
+                # Match to competitor
+                matched = next(
+                    (c for c in competitors if c.lower() in title.lower() or c.lower() in snippet.lower()),
+                    "General",
+                )
+                results.append({
+                    "competitor": matched,
+                    "source": "news",
+                    "headline": title,
+                    "url": url,
+                    "snippet": snippet,
+                    "date": result.get("date", ""),
+                })
+    except Exception as e:
+        for c in competitors:
+            results.append({"competitor": c, "source": "news", "error": str(e)})
+
+    return results
+
+
+COMPETITOR_URLS = {
+    "GCash": "https://www.gcash.com",
+    "Maya": "https://www.maya.ph",
+    "HomeCredit": "https://www.homecredit.ph",
+    "Salmon": "https://salmon.ph",
+    "Maribank": "https://www.maribank.ph",
+    "Billease": "https://billease.ph",
+}
+
+COMPETITOR_APP_IDS = {
+    "GCash": {"android": "com.globe.gcash.android"},
+    "Maya": {"android": "ph.maya.app"},
+    "HomeCredit": {"android": "ph.com.homecredit.app"},
+    "Salmon": {"android": "ph.salmon.app"},
+    "Billease": {"android": "com.billease.app"},
+}
+
+COMPETITOR_SOCIAL = {
+    "GCash": {"instagram": "gcashofficial"},
+    "Maya": {"instagram": "mayaph"},
+    "HomeCredit": {"instagram": "homecreditph"},
+    "Salmon": {"instagram": "salmon.ph.app"},
+    "Maribank": {"instagram": "maribank.ph"},
+    "Billease": {"instagram": "billease.ph"},
+    "Gotyme": {"instagram": "gotymebank"},
+}
+
+
+async def scrape_social_posts(competitors: list[str]) -> list[dict]:
+    """Scrape Instagram posts for competitor pages."""
+    if not APIFY_TOKEN:
+        return [
+            {"competitor": c, "source": "instagram", "error": "no_apify_token"}
+            for c in competitors if c in COMPETITOR_SOCIAL
+        ]
+
+    results = []
+    handle_to_comp = {}
+    direct_urls = []
+
+    for comp in competitors:
+        handle = COMPETITOR_SOCIAL.get(comp, {}).get("instagram")
+        if handle:
+            direct_urls.append(f"https://www.instagram.com/{handle}/")
+            handle_to_comp[handle.lower()] = comp
+
+    if not direct_urls:
+        return results
+
+    try:
+        items = await _run_actor(
+            "apify/instagram-post-scraper",
+            {
+                "directUrls": direct_urls,
+                "resultsLimit": 9,
+            },
+        )
+        for item in items:
+            owner = (item.get("ownerUsername") or "").lower()
+            comp = handle_to_comp.get(owner, "Unknown")
+            # Cover image posts, video thumbnails, and carousel first images
+            image_url = (
+                item.get("displayUrl")
+                or item.get("thumbnailUrl")
+                or item.get("videoThumbnailUrl")
+                or (item.get("images") or [None])[0]
+                or ""
+            )
+            results.append({
+                "competitor": comp,
+                "source": "instagram",
+                "image_url": image_url,
+                "caption": (item.get("caption") or "")[:300],
+                "likes": item.get("likesCount", 0),
+                "comments": item.get("commentsCount", 0),
+                "date": item.get("timestamp", ""),
+                "post_url": item.get("url", ""),
+                "username": item.get("ownerUsername", ""),
+                "type": item.get("type", ""),
+            })
+    except Exception as e:
+        for comp in competitors:
+            if comp in COMPETITOR_SOCIAL:
+                results.append({"competitor": comp, "source": "instagram", "error": str(e)})
+
+    return results
+
+
+async def run_all_scrapers(competitors: list[str], progress_cb=None) -> dict:
+    raw = {}
+
+    if progress_cb:
+        await progress_cb("meta_ads", "loading")
+    raw["meta_ads"] = await scrape_meta_ads(competitors)
+    if progress_cb:
+        await progress_cb("meta_ads", "done")
+
+    if progress_cb:
+        await progress_cb("websites", "loading")
+    raw["websites"] = await scrape_websites(competitors, COMPETITOR_URLS)
+    if progress_cb:
+        await progress_cb("websites", "done")
+
+    if progress_cb:
+        await progress_cb("app_store", "loading")
+    raw["app_store"] = await scrape_app_store(competitors, COMPETITOR_APP_IDS)
+    if progress_cb:
+        await progress_cb("app_store", "done")
+
+    if progress_cb:
+        await progress_cb("news", "loading")
+    raw["news"] = await scrape_news(competitors)
+    if progress_cb:
+        await progress_cb("news", "done")
+
+    if progress_cb:
+        await progress_cb("social", "loading")
+    raw["social"] = await scrape_social_posts(competitors)
+    if progress_cb:
+        await progress_cb("social", "done")
+
+    return raw

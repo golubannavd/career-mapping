@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fintech Trend Watcher — Philippines</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #273449;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --green: #22c55e;
+    --green-bg: #14532d;
+    --red: #ef4444;
+    --red-bg: #7f1d1d;
+    --amber: #f59e0b;
+    --amber-bg: #78350f;
+    --gray: #64748b;
+    --gray-bg: #1e293b;
+    --yellow: #fbbf24;
+    --yellow-bg: #451a03;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Competitor chips */
+  .chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: default;
+    transition: border-color 0.15s;
+  }
+
+  .chip-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+  }
+  .chip-remove:hover { color: var(--red); }
+
+  .chip-input {
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    width: 130px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .chip-input:focus { border-color: var(--accent); }
+  .chip-input::placeholder { color: var(--muted); }
+
+  /* ── Main ── */
+  main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+  /* Section tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 6px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab:hover:not(:disabled) { color: var(--text); background: var(--surface2); }
+  .tab.active { background: var(--accent); color: #fff; }
+  .tab:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .tab-status { font-size: 13px; }
+
+  /* ── Content panel ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 80px 24px;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h2 { font-size: 20px; margin-bottom: 8px; color: var(--text); }
+
+  /* Cards grid */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 0.15s;
+  }
+  .card:hover { border-color: var(--accent); }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .competitor-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .signal-badge {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .signal-bullish { background: var(--green-bg); color: var(--green); }
+  .signal-bearish { background: var(--red-bg); color: var(--red); }
+  .signal-watch { background: var(--amber-bg); color: var(--amber); }
+  .signal-neutral { background: var(--gray-bg); color: var(--gray); border: 1px solid var(--border); }
+
+  .card-headline {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .card-detail {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .card-source a {
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .card-source a:hover { text-decoration: underline; }
+
+  /* Takeaway box */
+  .takeaway {
+    background: #1c1507;
+    border: 1px solid var(--amber);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .takeaway-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .takeaway-content { }
+  .takeaway-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--amber); margin-bottom: 4px; }
+  .takeaway-text { font-size: 14px; color: #fef3c7; line-height: 1.6; }
+
+  /* Social section */
+  .platform-block { margin-bottom: 28px; }
+  .platform-label {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .platform-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Messaging section */
+  .patterns-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .patterns-box h3 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .pattern-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .pattern-item::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+
+  .tagline-quote {
+    font-size: 16px;
+    font-style: italic;
+    color: var(--text);
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
+    line-height: 1.4;
+  }
+  .tagline-null { color: var(--muted); font-style: italic; font-size: 13px; }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .meta-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .meta-pill span { color: var(--text); font-weight: 500; }
+
+  /* Strategy section */
+  .strategy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .profile-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .threat-badge {
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .threat-high { background: var(--red-bg); color: var(--red); }
+  .threat-medium { background: var(--amber-bg); color: var(--amber); }
+  .threat-low { background: var(--green-bg); color: var(--green); }
+
+  .profile-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .profile-field {
+    font-size: 13px;
+  }
+  .profile-field-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .profile-field-value { color: var(--text); }
+
+  .weakness-field .profile-field-value { color: var(--red); }
+
+  .list-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+  .list-box h3 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .list-item-bullet { color: var(--accent); flex-shrink: 0; font-weight: 700; }
+
+  /* Error card */
+  .error-card {
+    background: var(--red-bg);
+    border: 1px solid var(--red);
+    border-radius: 12px;
+    padding: 16px 20px;
+    color: var(--red);
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  /* ── Footer (digests) ── */
+  footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 20px 24px;
+    margin-top: 40px;
+  }
+
+  .footer-inner { max-width: 1200px; margin: 0 auto; }
+
+  .footer-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .digest-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .digest-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .digest-item:hover { border-color: var(--accent); }
+  .digest-item.active-digest { border-color: var(--accent); background: #1e3a5f; }
+
+  .digest-date { font-size: 12px; font-weight: 600; color: var(--text); }
+  .digest-comps { font-size: 11px; color: var(--muted); }
+
+  .digest-delete {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    margin-left: 4px;
+    transition: color 0.15s;
+  }
+  .digest-delete:hover { color: var(--red); }
+
+  .no-digests { font-size: 13px; color: var(--muted); }
+
+  /* Loading state overlay on tab */
+  .loading-bar {
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), #8b5cf6);
+    border-radius: 2px;
+    margin-bottom: 20px;
+    animation: shimmer 1.5s infinite;
+    background-size: 200% 100%;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% center; }
+    100% { background-position: -200% center; }
+  }
+
+  .section-loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 40px;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-icon">📡</div>
+      Fintech Trend Watcher
+      <span style="font-size:12px;font-weight:400;color:var(--muted)">Philippines</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="copyBtn" title="Copy digest as text">
+        📋 Copy
+      </button>
+      <button class="btn btn-primary" id="generateBtn">
+        Generate Digest
+      </button>
+    </div>
+  </div>
+  <div class="chips-row" id="chipsRow">
+    <!-- chips rendered here -->
+    <input class="chip-input" id="chipInput" placeholder="+ Add competitor" />
+  </div>
+</header>
+
+<main>
+  <div class="tabs" id="tabs">
+    <button class="tab" data-section="news" disabled>📰 <span>News</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="competitor" disabled>🚀 <span>Moves</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="social" disabled>📱 <span>Social</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="press" disabled>🗞️ <span>Press</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="messaging" disabled>💬 <span>Messaging</span> <span class="tab-status"></span></button>
+    <button class="tab" data-section="strategy" disabled>♟️ <span>Strategy</span> <span class="tab-status"></span></button>
+  </div>
+
+  <div id="panels">
+    <div class="panel active" id="panel-empty">
+      <div class="empty-state">
+        <div class="icon">🇵🇭</div>
+        <h2>Ready to research</h2>
+        <p>Add your competitors and click <strong>Generate Digest</strong> to start monitoring the Philippines fintech landscape.</p>
+      </div>
+    </div>
+    <div class="panel" id="panel-news"></div>
+    <div class="panel" id="panel-competitor"></div>
+    <div class="panel" id="panel-social"></div>
+    <div class="panel" id="panel-press"></div>
+    <div class="panel" id="panel-messaging"></div>
+    <div class="panel" id="panel-strategy"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-title">Saved Digests</div>
+    <div class="digest-list" id="digestList">
+      <span class="no-digests">No saved digests yet.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const DEFAULT_COMPETITORS = ["GCash", "Maya", "Maribank", "Salmon", "Billease", "HomeCredit", "Gotyme"];
+const SECTIONS = ["news", "competitor", "social", "press", "messaging", "strategy"];
+
+let competitors = [...DEFAULT_COMPETITORS];
+let currentDigest = {};
+let isGenerating = false;
+let activeSection = null;
+let activeDigestId = null;
+
+// ── Competitors ──────────────────────────────────────────────────────────────
+
+function renderChips() {
+  const row = document.getElementById('chipsRow');
+  const input = document.getElementById('chipInput');
+  // Remove old chips
+  row.querySelectorAll('.chip').forEach(c => c.remove());
+  competitors.forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.innerHTML = `${esc(name)} <button class="chip-remove" data-name="${esc(name)}" title="Remove">×</button>`;
+    row.insertBefore(chip, input);
+  });
+}
+
+document.getElementById('chipsRow').addEventListener('click', e => {
+  const btn = e.target.closest('.chip-remove');
+  if (btn) {
+    competitors = competitors.filter(c => c !== btn.dataset.name);
+    renderChips();
+  }
+});
+
+const chipInput = document.getElementById('chipInput');
+chipInput.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ',') && chipInput.value.trim()) {
+    e.preventDefault();
+    const name = chipInput.value.trim().replace(/,$/, '');
+    if (name && !competitors.includes(name)) {
+      competitors.push(name);
+      renderChips();
+    }
+    chipInput.value = '';
+  }
+});
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+
+function setTabStatus(section, status) {
+  const tab = document.querySelector(`.tab[data-section="${section}"]`);
+  if (!tab) return;
+  const statusEl = tab.querySelector('.tab-status');
+  if (status === 'loading') { statusEl.textContent = '⏳'; tab.disabled = false; }
+  else if (status === 'done') { statusEl.textContent = '✓'; tab.disabled = false; }
+  else if (status === 'error') { statusEl.textContent = '✗'; tab.disabled = false; }
+  else { statusEl.textContent = ''; tab.disabled = true; }
+}
+
+function activateTab(section) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const tab = document.querySelector(`.tab[data-section="${section}"]`);
+  if (tab) tab.classList.add('active');
+  const panel = document.getElementById(`panel-${section}`);
+  if (panel) panel.classList.add('active');
+  else document.getElementById('panel-empty').classList.add('active');
+  activeSection = section;
+}
+
+document.getElementById('tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (tab && !tab.disabled) activateTab(tab.dataset.section);
+});
+
+// ── Rendering ────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function signalBadge(signal) {
+  const s = (signal || 'neutral').toLowerCase();
+  return `<span class="signal-badge signal-${s}">${esc(s)}</span>`;
+}
+
+function sourceLink(src, url) {
+  if (!url && !src) return '';
+  if (url && url !== 'null' && url !== 'string or null') {
+    return `<div class="card-source"><a href="${esc(url)}" target="_blank" rel="noopener">🔗 ${esc(src || url)}</a></div>`;
+  }
+  if (src) return `<div class="card-source" style="color:var(--muted);font-size:12px;">📌 ${esc(src)}</div>`;
+  return '';
+}
+
+function takeawayBox(text) {
+  if (!text) return '';
+  return `<div class="takeaway">
+    <div class="takeaway-icon">💡</div>
+    <div class="takeaway-content">
+      <div class="takeaway-label">Strategic Takeaway</div>
+      <div class="takeaway-text">${esc(text)}</div>
+    </div>
+  </div>`;
+}
+
+function renderNews(data) {
+  const findings = data.findings || [];
+  let html = takeawayBox(data.takeaway);
+  html += '<div class="cards-grid">';
+  for (const f of findings) {
+    html += `<div class="card">
+      <div class="card-header">
+        <span class="competitor-tag">${esc(f.competitor)}</span>
+        ${signalBadge(f.signal)}
+      </div>
+      <div class="card-headline">${esc(f.headline)}</div>
+      <div class="card-detail">${esc(f.detail)}</div>
+      ${sourceLink(f.source, null)}
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderCompetitor(data) {
+  return renderNews(data); // same shape
+}
+
+function renderPress(data) {
+  const findings = data.findings || [];
+  let html = takeawayBox(data.takeaway);
+  html += '<div class="cards-grid">';
+  for (const f of findings) {
+    const sentimentColor = f.sentiment === 'positive' ? 'var(--green)' : f.sentiment === 'negative' ? 'var(--red)' : 'var(--muted)';
+    html += `<div class="card">
+      <div class="card-header">
+        <span class="competitor-tag">${esc(f.competitor)}</span>
+        ${signalBadge(f.signal)}
+      </div>
+      <div class="card-headline">${esc(f.headline)}</div>
+      <div class="card-detail">${esc(f.detail)}</div>
+      <div style="font-size:12px;color:${sentimentColor};font-weight:500;">
+        ${esc(f.outlet)} · ${esc(f.sentiment)}
+      </div>
+      ${sourceLink(f.outlet, f.url)}
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderSocial(data) {
+  const platforms = data.platforms || {};
+  const icons = { instagram: '📸', facebook: '👥', tiktok: '🎵' };
+  let html = takeawayBox(data.takeaway);
+
+  for (const [platform, posts] of Object.entries(platforms)) {
+    if (!posts || posts.length === 0) continue;
+    html += `<div class="platform-block">
+      <div class="platform-label">${icons[platform] || '📲'} ${platform}</div>
+      <div class="cards-grid">`;
+    for (const p of posts) {
+      const postUrl = p.post_url && p.post_url !== 'null' && p.post_url !== 'string or null' ? p.post_url : null;
+      html += `<div class="card">
+        <div class="card-header">
+          <span class="competitor-tag">${esc(p.competitor)}</span>
+          ${signalBadge(p.signal)}
+        </div>
+        <div class="card-headline">${esc(p.headline)}</div>
+        <div class="card-detail">${esc(p.observation)}</div>
+        ${postUrl ? `<div class="card-source"><a href="${esc(postUrl)}" target="_blank" rel="noopener">🔗 View post →</a></div>` : ''}
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+  return html;
+}
+
+function renderMessaging(data) {
+  const items = data.items || [];
+  const patterns = data.patterns || [];
+
+  let html = '';
+  if (patterns.length) {
+    html += `<div class="patterns-box">
+      <h3>Cross-competitor Patterns</h3>
+      ${patterns.map(p => `<div class="pattern-item">${esc(p)}</div>`).join('')}
+    </div>`;
+  }
+
+  html += takeawayBox(data.takeaway);
+  html += '<div class="cards-grid">';
+  for (const item of items) {
+    const tagline = item.tagline && item.tagline !== 'null' && item.tagline !== 'exact copy or null'
+      ? `<div class="tagline-quote">${esc(item.tagline)}</div>`
+      : `<div class="tagline-null">No tagline captured</div>`;
+    html += `<div class="card">
+      <div class="card-header">
+        <span class="competitor-tag">${esc(item.competitor)}</span>
+        <span class="meta-pill"><span>${esc(item.channel)}</span></span>
+      </div>
+      ${tagline}
+      <div class="meta-row">
+        <span class="meta-pill">Audience: <span>${esc(item.target_audience)}</span></span>
+        <span class="meta-pill">Tone: <span>${esc(item.tone)}</span></span>
+      </div>
+      <div class="card-detail">${esc(item.insight)}</div>
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderStrategy(data) {
+  const profiles = data.profiles || [];
+  const patterns = data.patterns || [];
+  const opportunities = data.opportunities || [];
+
+  let html = '';
+
+  if (patterns.length) {
+    html += `<div class="list-box">
+      <h3>Market Patterns</h3>
+      ${patterns.map(p => `<div class="list-item"><span class="list-item-bullet">→</span>${esc(p)}</div>`).join('')}
+    </div>`;
+  }
+
+  if (opportunities.length) {
+    html += `<div class="list-box">
+      <h3>Opportunities</h3>
+      ${opportunities.map(o => `<div class="list-item"><span class="list-item-bullet">✦</span>${esc(o)}</div>`).join('')}
+    </div>`;
+  }
+
+  html += takeawayBox(data.takeaway);
+
+  html += '<div class="strategy-grid">';
+  for (const p of profiles) {
+    const tl = (p.threat_level || 'low').toLowerCase();
+    html += `<div class="profile-card">
+      <div class="profile-header">
+        <span class="competitor-tag" style="font-size:13px;">${esc(p.competitor)}</span>
+        <span class="threat-badge threat-${tl}">Threat: ${esc(tl)}</span>
+      </div>
+      <div class="profile-row">
+        <div class="profile-field">
+          <div class="profile-field-label">Product Focus</div>
+          <div class="profile-field-value">${esc(p.product_focus)}</div>
+        </div>
+        <div class="profile-field">
+          <div class="profile-field-label">Marketing Angle</div>
+          <div class="profile-field-value">${esc(p.marketing_angle)}</div>
+        </div>
+        <div class="profile-field">
+          <div class="profile-field-label">Growth Lever</div>
+          <div class="profile-field-value">${esc(p.growth_lever)}</div>
+        </div>
+        <div class="profile-field weakness-field">
+          <div class="profile-field-label">Weakness</div>
+          <div class="profile-field-value">${esc(p.weakness)}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+const RENDERERS = {
+  news: renderNews,
+  competitor: renderCompetitor,
+  social: renderSocial,
+  press: renderPress,
+  messaging: renderMessaging,
+  strategy: renderStrategy,
+};
+
+function renderSection(section, data) {
+  const panel = document.getElementById(`panel-${section}`);
+  if (!panel) return;
+  if (data.error) {
+    panel.innerHTML = `<div class="error-card">⚠️ Error researching this section: ${esc(data.error)}</div>`;
+    return;
+  }
+  const renderer = RENDERERS[section];
+  if (renderer) panel.innerHTML = renderer(data);
+}
+
+// ── Generate ──────────────────────────────────────────────────────────────────
+
+document.getElementById('generateBtn').addEventListener('click', startGenerate);
+
+async function startGenerate() {
+  if (isGenerating) return;
+  if (competitors.length === 0) { alert('Add at least one competitor.'); return; }
+
+  isGenerating = true;
+  currentDigest = {};
+  activeDigestId = null;
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Starting...';
+
+  // Reset tabs & panels
+  SECTIONS.forEach(s => {
+    setTabStatus(s, null);
+    const panel = document.getElementById(`panel-${s}`);
+    if (panel) panel.innerHTML = '';
+  });
+
+  // Show empty state
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-empty').classList.add('active');
+  activeSection = null;
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ competitors, sections: SECTIONS }),
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let event;
+        try { event = JSON.parse(line.slice(6)); } catch { continue; }
+        handleEvent(event, btn);
+      }
+    }
+  } catch (err) {
+    btn.innerHTML = 'Generate Digest';
+    btn.disabled = false;
+    isGenerating = false;
+    alert('Connection error: ' + err.message);
+  }
+}
+
+function handleEvent(event, btn) {
+  if (event.status === 'loading') {
+    setTabStatus(event.section, 'loading');
+    const panel = document.getElementById(`panel-${event.section}`);
+    if (panel) panel.innerHTML = `<div class="section-loading"><div class="spinner"></div> Researching ${event.section}...</div>`;
+    btn.innerHTML = `<div class="spinner"></div> Fetching ${event.section}...`;
+
+    // Auto-switch to loading section if none active
+    if (!activeSection || activeSection === null) activateTab(event.section);
+
+  } else if (event.status === 'done') {
+    setTabStatus(event.section, 'done');
+    currentDigest[event.section] = event.data;
+    renderSection(event.section, event.data);
+
+    // Auto-switch to this section if it was loading
+    if (activeSection === event.section) {
+      activateTab(event.section);
+    }
+    // If no section active yet, activate first done
+    if (!activeSection) activateTab(event.section);
+
+  } else if (event.status === 'error') {
+    setTabStatus(event.section, 'error');
+    renderSection(event.section, { error: event.error });
+
+  } else if (event.status === 'complete') {
+    btn.innerHTML = 'Generate Digest';
+    btn.disabled = false;
+    isGenerating = false;
+    activeDigestId = event.digest_id;
+    loadDigestList();
+
+    // If no section active, activate first done tab
+    if (!activeSection) {
+      const firstDone = document.querySelector('.tab:not([disabled])');
+      if (firstDone) activateTab(firstDone.dataset.section);
+    }
+  }
+}
+
+// ── Digests ───────────────────────────────────────────────────────────────────
+
+async function loadDigestList() {
+  const res = await fetch('/api/digests');
+  const digests = await res.json();
+  const list = document.getElementById('digestList');
+  if (!digests.length) {
+    list.innerHTML = '<span class="no-digests">No saved digests yet.</span>';
+    return;
+  }
+  list.innerHTML = digests.map(d => `
+    <div class="digest-item ${d.id === activeDigestId ? 'active-digest' : ''}" data-id="${esc(d.id)}">
+      <div>
+        <div class="digest-date">${esc(d.date || d.id)}</div>
+        <div class="digest-comps">${esc((d.competitors || []).join(', '))}</div>
+      </div>
+      <button class="digest-delete" data-id="${esc(d.id)}" title="Delete">×</button>
+    </div>
+  `).join('');
+}
+
+document.getElementById('digestList').addEventListener('click', async e => {
+  const delBtn = e.target.closest('.digest-delete');
+  if (delBtn) {
+    e.stopPropagation();
+    if (!confirm('Delete this digest?')) return;
+    await fetch(`/api/digests/${encodeURIComponent(delBtn.dataset.id)}`, { method: 'DELETE' });
+    loadDigestList();
+    return;
+  }
+  const item = e.target.closest('.digest-item');
+  if (item) loadDigest(item.dataset.id);
+});
+
+async function loadDigest(id) {
+  const res = await fetch(`/api/digests/${encodeURIComponent(id)}`);
+  if (!res.ok) return;
+  const digest = await res.json();
+
+  activeDigestId = id;
+  currentDigest = digest.sections || {};
+
+  // Update competitors display
+  competitors = digest.competitors || [];
+  renderChips();
+
+  // Render sections
+  SECTIONS.forEach(s => {
+    setTabStatus(s, null);
+    const panel = document.getElementById(`panel-${s}`);
+    if (panel) panel.innerHTML = '';
+  });
+
+  for (const [section, data] of Object.entries(currentDigest)) {
+    if (data && !data.error) {
+      setTabStatus(section, 'done');
+    } else if (data && data.error) {
+      setTabStatus(section, 'error');
+    }
+    renderSection(section, data);
+  }
+
+  // Activate first done section
+  const firstDone = document.querySelector('.tab:not([disabled])');
+  if (firstDone) activateTab(firstDone.dataset.section);
+  else {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-empty').classList.add('active');
+  }
+
+  loadDigestList();
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────────────
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const lines = [];
+  lines.push('FINTECH TREND WATCHER — Philippines Intelligence Digest');
+  lines.push('='.repeat(55));
+  lines.push('');
+
+  for (const [section, data] of Object.entries(currentDigest)) {
+    lines.push(`── ${section.toUpperCase()} ──`);
+    lines.push(JSON.stringify(data, null, 2));
+    lines.push('');
+  }
+
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+  });
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderChips();
+loadDigestList();
+</script>
+</body>
+</html>
